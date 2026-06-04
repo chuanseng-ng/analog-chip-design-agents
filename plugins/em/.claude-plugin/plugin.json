@@ -1,0 +1,18 @@
+{
+  "name": "analog-design-em",
+  "version": "0.1.0",
+  "description": "Electromagnetic solving for passives/antennas, S-parameter extraction and lumped-model fitting",
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "repository": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "license": "MIT",
+  "skills": [
+    "./skills/em-modeling"
+  ],
+  "agents": [
+    "./agents/em-modeling-orchestrator.md"
+  ]
+}

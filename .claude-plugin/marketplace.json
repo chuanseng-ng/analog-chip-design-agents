@@ -1,0 +1,206 @@
+{
+  "name": "analog-chip-design-agents",
+  "owner": {
+    "name": "chuanseng-ng",
+    "github": "chuanseng-ng"
+  },
+  "metadata": {
+    "description": "Analog / mixed-signal + RF chip design pipeline \u2014 16 plugins across 14 domains plus infrastructure and a meta pipeline orchestrator. Phase 0 skeleton; domains implemented in phases per PLAN.md.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "analog-design-architecture",
+      "description": "Signal-chain budgeting, per-block spec allocation, and feasibility for analog/mixed-signal",
+      "source": "./plugins/architecture",
+      "strict": true,
+      "skills": [
+        "./skills/analog-architecture"
+      ],
+      "agents": [
+        "./agents/analog-architecture-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-modeling",
+      "description": "Verilog-A/AMS, VHDL-AMS and SystemVerilog real-number modeling, OSDI compilation, connect modules",
+      "source": "./plugins/modeling",
+      "strict": true,
+      "skills": [
+        "./skills/behavioral-modeling"
+      ],
+      "agents": [
+        "./agents/behavioral-modeling-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-circuit",
+      "description": "Topology selection, device sizing/biasing, schematic capture, pre-layout ERC and design review",
+      "source": "./plugins/circuit",
+      "strict": true,
+      "skills": [
+        "./skills/circuit-design"
+      ],
+      "agents": [
+        "./agents/circuit-design-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-simulation",
+      "description": "SPICE analyses (DC/AC/transient/noise), PVT corners and Monte-Carlo spec sign-off",
+      "source": "./plugins/simulation",
+      "strict": true,
+      "skills": [
+        "./skills/circuit-simulation"
+      ],
+      "agents": [
+        "./agents/circuit-simulation-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-ams-verification",
+      "description": "Mixed-signal co-simulation, connect rules, RNM regression, and coverage closure",
+      "source": "./plugins/ams-verification",
+      "strict": true,
+      "skills": [
+        "./skills/ams-verification"
+      ],
+      "agents": [
+        "./agents/ams-verification-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-layout",
+      "description": "Analog custom layout \u2014 floorplan, matched device generation, symmetry/shielded place and route",
+      "source": "./plugins/layout",
+      "strict": true,
+      "skills": [
+        "./skills/custom-layout"
+      ],
+      "agents": [
+        "./agents/custom-layout-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-physical-verification",
+      "description": "DRC, LVS, antenna/ERC and density/DFM sign-off against foundry decks",
+      "source": "./plugins/physical-verification",
+      "strict": true,
+      "skills": [
+        "./skills/physical-verification"
+      ],
+      "agents": [
+        "./agents/physical-verification-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-extraction",
+      "description": "RC and coupling parasitic extraction and back-annotated post-layout netlist generation",
+      "source": "./plugins/extraction",
+      "strict": true,
+      "skills": [
+        "./skills/parasitic-extraction"
+      ],
+      "agents": [
+        "./agents/parasitic-extraction-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-post-layout",
+      "description": "Post-PEX corner and Monte-Carlo simulation, spec re-verification, and tape-out gating",
+      "source": "./plugins/post-layout",
+      "strict": true,
+      "skills": [
+        "./skills/post-layout-signoff"
+      ],
+      "agents": [
+        "./agents/post-layout-signoff-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-reliability",
+      "description": "Electromigration, IR-drop, ESD, latch-up and aging (HCI/NBTI) analysis and sign-off",
+      "source": "./plugins/reliability",
+      "strict": true,
+      "skills": [
+        "./skills/reliability"
+      ],
+      "agents": [
+        "./agents/reliability-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-characterization",
+      "description": "Timing/power/noise characterization and Liberty (.lib) / behavioral model generation",
+      "source": "./plugins/characterization",
+      "strict": true,
+      "skills": [
+        "./skills/characterization"
+      ],
+      "agents": [
+        "./agents/characterization-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-rf",
+      "description": "RF/mmWave design \u2014 S-parameter, harmonic balance, Pnoise/PAC, IP3 and load-pull",
+      "source": "./plugins/rf",
+      "strict": true,
+      "skills": [
+        "./skills/rf-design"
+      ],
+      "agents": [
+        "./agents/rf-design-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-em",
+      "description": "Electromagnetic solving for passives/antennas, S-parameter extraction and lumped-model fitting",
+      "source": "./plugins/em",
+      "strict": true,
+      "skills": [
+        "./skills/em-modeling"
+      ],
+      "agents": [
+        "./agents/em-modeling-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-ams-integration",
+      "description": "Mixed-signal top assembly, boundary/connect rules, chip-level AMS sim and power intent",
+      "source": "./plugins/ams-integration",
+      "strict": true,
+      "skills": [
+        "./skills/ams-integration"
+      ],
+      "agents": [
+        "./agents/ams-integration-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-infrastructure",
+      "description": "Analog/RF tool detection, JSON output wrappers, MCP config, and memory distillation",
+      "source": "./plugins/infrastructure",
+      "strict": true,
+      "skills": [
+        "./skills/infrastructure",
+        "./skills/memory-keeper"
+      ],
+      "agents": [
+        "./agents/infrastructure-orchestrator.md"
+      ]
+    },
+    {
+      "name": "analog-design-meta",
+      "description": "Cross-domain pipeline orchestrator \u2014 design_state.json fix_request loop with iteration cap and checkpoints",
+      "source": "./plugins/meta",
+      "strict": true,
+      "skills": [
+        "./skills/pipeline-orchestration"
+      ],
+      "agents": [
+        "./agents/pipeline-orchestrator.md"
+      ]
+    }
+  ]
+}

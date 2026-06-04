@@ -1,0 +1,138 @@
+name: Validate Plugin
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main]
+  workflow_call:
+
+jobs:
+  validate:
+    name: Validate Skills, Agents & Manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate plugin.json
+        run: |
+          python3 -c "
+          import json, os, glob
+          repo_root = os.path.realpath(os.getcwd())
+          manifests = sorted(glob.glob('plugins/*/.claude-plugin/plugin.json'))
+          assert manifests, 'no plugin.json files found'
+          for manifest in manifests:
+              plugin_src = os.path.realpath(os.path.dirname(os.path.dirname(manifest)))
+              d = json.load(open(manifest))
+              assert 'name' in d, f'{manifest}: missing name'
+              assert isinstance(d.get('skills'), list), f'{manifest}: skills must be array'
+              assert isinstance(d.get('agents'), list), f'{manifest}: agents must be array'
+              for raw in d['skills']:
+                  resolved = os.path.realpath(os.path.join(plugin_src, raw))
+                  assert resolved.startswith(repo_root + os.sep), f'{manifest}: skill path escapes repo: {raw!r}'
+                  assert os.path.exists(resolved), f'{manifest}: skill path not found: {raw!r}'
+              for raw in d['agents']:
+                  resolved = os.path.realpath(os.path.join(plugin_src, raw))
+                  assert resolved.startswith(repo_root + os.sep), f'{manifest}: agent path escapes repo: {raw!r}'
+                  assert os.path.exists(resolved), f'{manifest}: agent path not found: {raw!r}'
+              print(f'OK: {manifest} — name={d[\"name\"]}, skills={len(d[\"skills\"])}, agents={len(d[\"agents\"])}')
+          print(f'All {len(manifests)} plugin.json files validated')
+          "
+
+      - name: Validate marketplace.json
+        run: |
+          python3 -c "
+          import json, os
+          d = json.load(open('.claude-plugin/marketplace.json'))
+          repo_root = os.path.realpath(os.getcwd())
+          assert isinstance(d.get('name'), str) and d['name'].strip(), 'marketplace.json: missing name'
+          for p in d.get('plugins', []):
+              assert isinstance(p, dict)
+              assert isinstance(p.get('name'), str) and p['name'].strip()
+              src = p.get('source', '')
+              source_dir = os.path.realpath(os.path.join(repo_root, src))
+              assert source_dir.startswith(repo_root + os.sep), f'plugin {p[\"name\"]!r} source escapes repo: {src!r}'
+              assert os.path.isdir(source_dir), f'plugin {p[\"name\"]!r} source not found: {src!r}'
+              assert os.path.isfile(os.path.join(source_dir, '.claude-plugin', 'plugin.json')), f'plugin {p[\"name\"]!r}: no .claude-plugin/plugin.json at source: {src!r}'
+              for raw in p.get('skills', []):
+                  resolved = os.path.realpath(os.path.join(source_dir, raw))
+                  assert resolved.startswith(repo_root + os.sep), f'skill path escapes repo: {raw!r}'
+                  assert os.path.isdir(resolved), f'skill path not a dir in {p[\"name\"]!r}: {raw!r}'
+              for raw in p.get('agents', []):
+                  resolved = os.path.realpath(os.path.join(source_dir, raw))
+                  assert resolved.startswith(repo_root + os.sep), f'agent path escapes repo: {raw!r}'
+                  assert os.path.isfile(resolved), f'agent path not a file in {p[\"name\"]!r}: {raw!r}'
+          print(f'marketplace.json OK — {len(d.get(\"plugins\", []))} plugins, all paths verified')
+          "
+
+      - name: Validate all SKILL.md files
+        run: |
+          python3 << 'PYEOF'
+          import sys, glob
+          paths = sorted(glob.glob("plugins/*/skills/*/SKILL.md"))
+          required_sections = ["## Purpose", "## Domain Rules", "## QoR Metrics", "## Output Required"]
+          errors = []
+          for path in paths:
+              content = open(path).read()
+              if not content.startswith("---"):
+                  errors.append(f"{path}: no YAML frontmatter")
+              for section in required_sections:
+                  if section not in content:
+                      errors.append(f"{path}: missing section '{section}'")
+              print(f"OK: {path} ({len(content.splitlines())} lines)")
+          if errors:
+              for e in errors: print(f"ERROR: {e}", file=sys.stderr)
+              sys.exit(1)
+          print(f"All {len(paths)} skill files validated")
+          PYEOF
+
+      - name: Validate all agent .md files
+        run: |
+          python3 << 'PYEOF'
+          import sys, glob
+          paths = sorted(glob.glob("plugins/*/agents/*.md"))
+          required_fields = ["name:", "description:", "model:", "effort:", "maxTurns:"]
+          errors = []
+          for path in paths:
+              content = open(path).read()
+              if not content.startswith("---"):
+                  errors.append(f"{path}: no YAML frontmatter")
+              for field in required_fields:
+                  if field not in content:
+                      errors.append(f"{path}: missing frontmatter field '{field}'")
+              if "## Stage Sequence" not in content:
+                  errors.append(f"{path}: missing '## Stage Sequence' section")
+              if "## Loop-Back Rules" not in content:
+                  errors.append(f"{path}: missing '## Loop-Back Rules' section")
+              print(f"OK: {path} ({len(content.splitlines())} lines)")
+          if errors:
+              for e in errors: print(f"ERROR: {e}", file=sys.stderr)
+              sys.exit(1)
+          print(f"All {len(paths)} agent files validated")
+          PYEOF
+
+      - name: Check counts match marketplace registrations
+        run: |
+          python3 << 'PYEOF'
+          import json, glob
+          skill_count = len(glob.glob("plugins/*/skills/*/SKILL.md"))
+          agent_count = len(glob.glob("plugins/*/agents/*.md"))
+          mp = json.load(open(".claude-plugin/marketplace.json"))
+          mp_count = len(mp.get("plugins", []))
+          print(f"Skills: {skill_count} | Agents: {agent_count} | Marketplace entries: {mp_count}")
+          # One orchestrator per plugin; one marketplace entry per plugin.
+          # Skills may exceed plugins — infrastructure registers both
+          # 'infrastructure' and 'memory-keeper'.
+          assert agent_count == mp_count == 16, \
+              f"Count mismatch — expected 16 agents and 16 marketplace entries: agents={agent_count}, marketplace={mp_count}"
+          assert skill_count >= mp_count, \
+              f"Fewer skills than plugins: skills={skill_count}, plugins={mp_count}"
+          print("Count check PASSED")
+          PYEOF

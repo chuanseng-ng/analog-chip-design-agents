@@ -1,0 +1,18 @@
+{
+  "name": "analog-design-layout",
+  "version": "0.1.0",
+  "description": "Analog custom layout \u2014 floorplan, matched device generation, symmetry/shielded place and route",
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "repository": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "license": "MIT",
+  "skills": [
+    "./skills/custom-layout"
+  ],
+  "agents": [
+    "./agents/custom-layout-orchestrator.md"
+  ]
+}

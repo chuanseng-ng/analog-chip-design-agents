@@ -1,0 +1,18 @@
+{
+  "name": "analog-design-architecture",
+  "version": "0.1.0",
+  "description": "Signal-chain budgeting, per-block spec allocation, and feasibility for analog/mixed-signal",
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "repository": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "license": "MIT",
+  "skills": [
+    "./skills/analog-architecture"
+  ],
+  "agents": [
+    "./agents/analog-architecture-orchestrator.md"
+  ]
+}
