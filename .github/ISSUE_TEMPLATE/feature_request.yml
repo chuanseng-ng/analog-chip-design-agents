@@ -1,0 +1,52 @@
+name: "🚀 Feature Request"
+description: Suggest improvements to agents, workflows, or system capabilities
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose improvements to the digital chip design agent system.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What limitation or gap are you encountering?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature or improvement
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Affected Workflow
+      description: Which workflow or agent flow is impacted?
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Agent behavior
+        - Workflow orchestration
+        - Code generation
+        - Tooling / scripts
+        - Documentation
+        - Other
+
+  - type: textarea
+    id: benefit
+    attributes:
+      label: Expected Benefit
+      description: Why is this valuable? (e.g., better automation, accuracy, usability)
