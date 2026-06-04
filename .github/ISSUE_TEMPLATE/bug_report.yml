@@ -1,0 +1,62 @@
+name: "🐞 Bug Report"
+description: Report an issue with agents, workflows, or design outputs
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report unexpected behavior in agents, workflows, or generated design artifacts.
+
+  - type: input
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of the repo is impacted?
+      placeholder: "agent / workflow / script / config / docs"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Provide a minimal reproducible flow
+      placeholder: |
+        1. Run agent/workflow...
+        2. Provide input...
+        3. Observe output...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Relevant Artifacts
+      description: Logs, generated files, configs, or outputs
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - Minor inconvenience
+        - Affects workflow
+        - Blocks usage
+        - Critical (system unusable)
