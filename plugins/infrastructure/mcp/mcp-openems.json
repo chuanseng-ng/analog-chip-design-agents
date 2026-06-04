@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "openems": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/analog-chip-design-agents/plugins/infrastructure/tools/mcp-adapter.py",
+        "--wrapper",
+        "/absolute/path/to/analog-chip-design-agents/plugins/infrastructure/tools/wrap-openems.sh",
+        "--tool",
+        "openems",
+        "--description",
+        "openEMS FDTD solve via output-filtering wrapper (set TOOL_TIMEOUT_S)"
+      ],
+      "env": {
+        "TOOL_TIMEOUT_S": "300"
+      }
+    }
+  }
+}

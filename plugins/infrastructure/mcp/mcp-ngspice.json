@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "ngspice": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/analog-chip-design-agents/plugins/infrastructure/tools/mcp-adapter.py",
+        "--wrapper",
+        "/absolute/path/to/analog-chip-design-agents/plugins/infrastructure/tools/wrap-ngspice.sh",
+        "--tool",
+        "ngspice",
+        "--description",
+        "ngspice batch analysis (DC/AC/tran/noise) via output-filtering wrapper"
+      ],
+      "env": {
+        "TOOL_TIMEOUT_S": "300"
+      }
+    }
+  }
+}

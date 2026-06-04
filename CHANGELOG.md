@@ -1,5 +1,39 @@
 # Changelog
 
+## [Unreleased] — Phase 1: core analog spine
+
+### Added
+
+- **`analog-design-meta` — pipeline orchestration (implemented).** Authoritative
+  `design_state.json` schema at `format_version "1.0"`: the analog/RF `constraints` schema
+  (supply, `specs`, `rf_specs`, PVT + mismatch `corners`, `yield`), the analog `fix_request`
+  schema (`spec_violation | convergence | functional | yield`, `suspected_circuit`,
+  `circuit_response`), failure-classification → retry-strategy mapping, per-stage `history[]`,
+  iteration cap, and approval checkpoints. Ships the `pipeline-orchestrator` agent and two
+  worked fixtures (`examples/design_state.fix_request.json`, `examples/design_state.checkpoint.json`).
+- **`analog-design-circuit` — circuit (schematic) design (implemented).** Six stages
+  (topology_selection → device_sizing → biasing → schematic_capture → pre_layout_erc →
+  design_review) with gm/Id sizing rules, QoR gates, common-issue tables, fix-request-servicing
+  mode, constraint validation, the `schematic_signoff` checkpoint, and memory wiring.
+- **`analog-design-simulation` — circuit simulation (implemented).** Eight stages
+  (testbench_setup → dc_op → ac/transient/noise → corner_analysis → monte_carlo → sim_signoff),
+  opening `fix_request`s (spec_violation / yield) routed to circuit-design, with corner/MC
+  closure rules and memory wiring.
+- **`analog-design-infrastructure` — infrastructure + memory-keeper (implemented).**
+  Six-stage tool detection/install/wrapper/MCP/validation flow for analog/RF tools; the
+  `memory-keeper` skill plus `distill.py` (registers all 16 domains incl. `infrastructure`);
+  output-filtering wrappers (`wrap-ngspice/xyce/magic/klayout/netgen/openvaf/openems.sh`); MCP
+  batch adapter + interactive ngspice **session** adapter; and 8 MCP config snippets.
+- **Memory system**: `memory/README.md`, seeded `knowledge.md` for `circuit`, `sim`,
+  `infrastructure`, `meta`, and `memory/designs/.gitkeep`.
+- **CI** (`validate.yml`): added `design_state.json` fixture validation (analog `fix_request`
+  + checkpoint schemas, history `failure_class`→`retry_strategy` mapping) and the
+  infrastructure-memory integration check (`knowledge.md` + `distill.py` registration).
+
+### Notes
+- The other 12 domains remain Phase 0 skeletons until their implementation phase (PLAN.md §12).
+- Provisional §13 defaults from Phase 0 are unchanged (prefix `analog-design-`, 16 plugins, MIT, sky130-primary).
+
 ## [Unreleased] — Phase 0: skeleton & conventions
 
 ### Added
