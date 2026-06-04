@@ -1,0 +1,18 @@
+{
+  "name": "analog-design-circuit",
+  "version": "0.1.0",
+  "description": "Topology selection, device sizing/biasing, schematic capture, pre-layout ERC and design review",
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "repository": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "license": "MIT",
+  "skills": [
+    "./skills/circuit-design"
+  ],
+  "agents": [
+    "./agents/circuit-design-orchestrator.md"
+  ]
+}

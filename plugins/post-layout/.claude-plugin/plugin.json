@@ -1,0 +1,18 @@
+{
+  "name": "analog-design-post-layout",
+  "version": "0.1.0",
+  "description": "Post-PEX corner and Monte-Carlo simulation, spec re-verification, and tape-out gating",
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "repository": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "license": "MIT",
+  "skills": [
+    "./skills/post-layout-signoff"
+  ],
+  "agents": [
+    "./agents/post-layout-signoff-orchestrator.md"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "analog-design-characterization",
+  "version": "0.1.0",
+  "description": "Timing/power/noise characterization and Liberty (.lib) / behavioral model generation",
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "repository": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "license": "MIT",
+  "skills": [
+    "./skills/characterization"
+  ],
+  "agents": [
+    "./agents/characterization-orchestrator.md"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "analog-design-infrastructure",
+  "version": "0.1.0",
+  "description": "Analog/RF tool detection, JSON output wrappers, MCP config, and memory distillation",
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "repository": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "license": "MIT",
+  "skills": [
+    "./skills/infrastructure",
+    "./skills/memory-keeper"
+  ],
+  "agents": [
+    "./agents/infrastructure-orchestrator.md"
+  ]
+}

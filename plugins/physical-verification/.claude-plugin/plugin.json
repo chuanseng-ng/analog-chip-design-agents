@@ -1,0 +1,18 @@
+{
+  "name": "analog-design-physical-verification",
+  "version": "0.1.0",
+  "description": "DRC, LVS, antenna/ERC and density/DFM sign-off against foundry decks",
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "repository": "https://github.com/chuanseng-ng/analog-chip-design-agents",
+  "license": "MIT",
+  "skills": [
+    "./skills/physical-verification"
+  ],
+  "agents": [
+    "./agents/physical-verification-orchestrator.md"
+  ]
+}
