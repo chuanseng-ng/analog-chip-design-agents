@@ -1,0 +1,105 @@
+{
+  "format_version": "1.0",
+  "design_name": "example_ldo",
+  "created_at": "2026-03-10T09:00:00Z",
+  "updated_at": "2026-03-10T11:20:00Z",
+  "cross_domain_iteration_count": 1,
+  "pipeline_session_id": null,
+  "pipeline_config": {
+    "max_cross_domain_iterations": 3
+  },
+  "pending_approval": null,
+  "fix_requests": [
+    {
+      "id": "fr_ps20260310_090000_20260310_093000_001",
+      "created_at": "2026-03-10T09:30:00Z",
+      "updated_at": "2026-03-10T11:00:00Z",
+      "created_by": "circuit-simulation-orchestrator",
+      "failure_class": "spec_violation",
+      "retry_strategy": "refine",
+      "analysis_name": "ac_stability",
+      "spec_or_metric": "phase_margin_deg",
+      "corner": "ss_125C_vmin",
+      "waveform_path": "sim/waves/ac_stability_ss_125C_vmin.raw",
+      "log_path": "sim/logs/ac_stability_ss_125C_vmin.log",
+      "suspected_circuit": {
+        "block": "error_amp",
+        "device": "M_tail / Cc",
+        "netlist": "netlist/ldo_ota.spice",
+        "schematic_ref": "sch/ldo_ota.sch"
+      },
+      "summary": "Phase margin 41 deg at SS/125C/Vmin — below 60 deg target",
+      "expected_behavior": "Phase margin >= 60 deg across all corners per spec",
+      "observed_behavior": "PM = 41 deg; non-dominant pole from output stage too close to UGF",
+      "session_id": "ps20260310_090000",
+      "status": "fixed",
+      "circuit_response": {
+        "fixed_at": "2026-03-10T11:00:00Z",
+        "diff_summary": "Increased Miller compensation cap Cc from 1.2pF to 2.0pF and added 8k nulling resistor; re-biased tail for higher gm. PM now 64 deg at the failing corner.",
+        "files_changed": ["sch/ldo_ota.sch", "netlist/ldo_ota.spice"],
+        "commit_ref": null
+      },
+      "history": [
+        {
+          "timestamp": "2026-03-10T09:30:00Z",
+          "agent": "circuit-simulation-orchestrator",
+          "from_status": null,
+          "to_status": "open",
+          "note": "Spec violation found in corner_analysis stage"
+        },
+        {
+          "timestamp": "2026-03-10T10:00:00Z",
+          "agent": "circuit-design-orchestrator",
+          "from_status": "open",
+          "to_status": "claimed",
+          "note": "Claimed by pipeline-orchestrator dispatch #1"
+        },
+        {
+          "timestamp": "2026-03-10T11:00:00Z",
+          "agent": "circuit-design-orchestrator",
+          "from_status": "claimed",
+          "to_status": "fixed",
+          "note": "Compensation re-tuned; PM closed"
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "timestamp": "2026-03-10T09:30:00Z",
+      "agent": "circuit-simulation-orchestrator",
+      "stage": "corner_analysis",
+      "decision": "escalate",
+      "confidence": "high",
+      "failure_class": "spec_violation",
+      "retry_strategy": "refine",
+      "suggested_next_step": "escalate",
+      "reason": "PM 41 deg < 60 deg target at SS/125C/Vmin — fix_request opened",
+      "constraint_ref": "specs.phase_margin_deg"
+    },
+    {
+      "timestamp": "2026-03-10T11:00:00Z",
+      "agent": "circuit-design-orchestrator",
+      "stage": "device_sizing",
+      "decision": "proceed",
+      "confidence": "high",
+      "failure_class": "none",
+      "retry_strategy": "none",
+      "suggested_next_step": "proceed",
+      "reason": "Compensation re-tuned for fix_request; PM 64 deg at failing corner",
+      "constraint_ref": "specs.phase_margin_deg"
+    },
+    {
+      "timestamp": "2026-03-10T11:20:00Z",
+      "agent": "pipeline-orchestrator",
+      "stage": "pipeline_signoff",
+      "decision": "proceed",
+      "confidence": "high",
+      "failure_class": "none",
+      "retry_strategy": "none",
+      "suggested_next_step": "proceed",
+      "reason": "All fix_requests resolved in 1 iteration",
+      "constraint_ref": null
+    }
+  ]
+}

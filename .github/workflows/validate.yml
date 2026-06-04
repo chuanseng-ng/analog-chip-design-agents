@@ -136,3 +136,150 @@ jobs:
               f"Fewer skills than plugins: skills={skill_count}, plugins={mp_count}"
           print("Count check PASSED")
           PYEOF
+
+      - name: Validate design_state.json fixtures
+        run: |
+          python3 << 'PYEOF'
+          import json, os, sys
+          errors = []
+          VALID_FORMAT_VERSIONS = {"1.0"}
+          VALID_CONFIDENCE = {"high", "medium", "low"}
+          VALID_HISTORY_FC = {"none", "functional", "spec_violation", "convergence", "matching",
+                              "yield", "drc_lvs", "connectivity", "reliability", "tool_error",
+                              "spec_gap", "resource_limit"}
+          VALID_NEXT_STEP = {"proceed", "retry_stage", "escalate", "abandon"}
+          VALID_RETRY_STRATEGY = {"none", "regenerate", "refine", "escalate"}
+          RETRY_STRATEGY_MAP = {
+              "none": "none", "functional": "refine", "spec_violation": "refine",
+              "matching": "refine", "yield": "refine", "convergence": "regenerate",
+              "drc_lvs": "regenerate", "connectivity": "refine", "reliability": "refine",
+              "tool_error": "regenerate", "spec_gap": "escalate", "resource_limit": "escalate",
+          }
+          VALID_FR_FAILURE = {"spec_violation", "convergence", "functional", "yield"}
+          VALID_FR_STATUS = {"open", "claimed", "fixed", "abandoned"}
+          FR_REQUIRED = ["id", "created_at", "updated_at", "created_by", "failure_class",
+                         "retry_strategy", "analysis_name", "spec_or_metric", "corner",
+                         "waveform_path", "log_path", "suspected_circuit", "summary",
+                         "expected_behavior", "observed_behavior", "session_id", "status",
+                         "circuit_response", "history"]
+          FR_SUSPECTED = ["block", "device", "netlist", "schematic_ref"]
+
+          def check_history(hist, label, errs):
+              if not isinstance(hist, list) or not hist:
+                  errs.append(f"{label}: history[] must be a non-empty list")
+                  return
+              for i, h in enumerate(hist):
+                  if not isinstance(h, dict):
+                      errs.append(f"{label}.history[{i}] must be an object"); continue
+                  if h.get("confidence") not in VALID_CONFIDENCE:
+                      errs.append(f"{label}.history[{i}].confidence invalid: {h.get('confidence')!r}")
+                  fc = h.get("failure_class")
+                  if fc not in VALID_HISTORY_FC:
+                      errs.append(f"{label}.history[{i}].failure_class invalid: {fc!r}")
+                  sns = h.get("suggested_next_step")
+                  if not (isinstance(sns, str) and (sns in VALID_NEXT_STEP or sns.startswith("loop_back_to:"))):
+                      errs.append(f"{label}.history[{i}].suggested_next_step invalid: {sns!r}")
+                  rs = h.get("retry_strategy")
+                  if rs not in VALID_RETRY_STRATEGY:
+                      errs.append(f"{label}.history[{i}].retry_strategy invalid: {rs!r}")
+                  elif fc in RETRY_STRATEGY_MAP and rs != RETRY_STRATEGY_MAP[fc]:
+                      errs.append(f"{label}.history[{i}].retry_strategy {rs!r} != mapped {RETRY_STRATEGY_MAP[fc]!r} for {fc!r}")
+
+          base = "plugins/meta/skills/pipeline-orchestration/examples"
+
+          # fix_request fixture
+          frp = f"{base}/design_state.fix_request.json"
+          if not os.path.isfile(frp):
+              errors.append(f"missing fixture: {frp}")
+          else:
+              d = json.load(open(frp))
+              if d.get("format_version") not in VALID_FORMAT_VERSIONS:
+                  errors.append(f"{frp}: format_version must be in {sorted(VALID_FORMAT_VERSIONS)}, got {d.get('format_version')!r}")
+              if not isinstance(d.get("pipeline_config"), dict) or "max_cross_domain_iterations" not in d.get("pipeline_config", {}):
+                  errors.append(f"{frp}: pipeline_config.max_cross_domain_iterations required")
+              frs = d.get("fix_requests")
+              if not isinstance(frs, list) or not frs:
+                  errors.append(f"{frp}: fix_requests must be a non-empty array")
+              else:
+                  for i, fr in enumerate(frs):
+                      for f in FR_REQUIRED:
+                          if f not in fr:
+                              errors.append(f"{frp}: fix_requests[{i}] missing field '{f}'")
+                      if fr.get("failure_class") not in VALID_FR_FAILURE:
+                          errors.append(f"{frp}: fix_requests[{i}].failure_class {fr.get('failure_class')!r} not in {VALID_FR_FAILURE}")
+                      if fr.get("status") not in VALID_FR_STATUS:
+                          errors.append(f"{frp}: fix_requests[{i}].status {fr.get('status')!r} not in {VALID_FR_STATUS}")
+                      if fr.get("retry_strategy") not in VALID_RETRY_STRATEGY:
+                          errors.append(f"{frp}: fix_requests[{i}].retry_strategy invalid")
+                      sc = fr.get("suspected_circuit", {})
+                      for f in FR_SUSPECTED:
+                          if f not in sc:
+                              errors.append(f"{frp}: fix_requests[{i}].suspected_circuit missing '{f}'")
+              check_history(d.get("history"), frp, errors)
+              if not errors:
+                  print(f"OK: {frp} — {len(frs)} fix_request(s), format_version={d['format_version']!r}")
+
+          # checkpoint fixture
+          ckp = f"{base}/design_state.checkpoint.json"
+          if not os.path.isfile(ckp):
+              errors.append(f"missing fixture: {ckp}")
+          else:
+              c = json.load(open(ckp))
+              if c.get("format_version") not in VALID_FORMAT_VERSIONS:
+                  errors.append(f"{ckp}: format_version must be in {sorted(VALID_FORMAT_VERSIONS)}, got {c.get('format_version')!r}")
+              pc = c.get("pipeline_config", {})
+              if not isinstance(pc.get("checkpoints"), list):
+                  errors.append(f"{ckp}: pipeline_config.checkpoints must be a list")
+              ac = c.get("approved_checkpoints")
+              if not isinstance(ac, list):
+                  errors.append(f"{ckp}: approved_checkpoints must be a list")
+              else:
+                  for i, e in enumerate(ac):
+                      if not isinstance(e, dict) or "stage" not in e:
+                          errors.append(f"{ckp}: approved_checkpoints[{i}] must be an object with 'stage'")
+              pa = c.get("pending_approval")
+              if pa is not None and pa.get("type") not in {"checkpoint", "escalation", "constraint_gap"}:
+                  errors.append(f"{ckp}: pending_approval.type invalid: {pa.get('type')!r}")
+              cons = c.get("constraints")
+              if not isinstance(cons, dict) or "supply" not in cons or "specs" not in cons:
+                  errors.append(f"{ckp}: constraints must include 'supply' and 'specs'")
+              check_history(c.get("history"), ckp, errors)
+              if not errors:
+                  print(f"OK: {ckp} — format_version={c.get('format_version')!r}, {len(c.get('history', []))} history entries")
+
+          if errors:
+              for e in errors: print(f"ERROR: {e}", file=sys.stderr)
+              sys.exit(1)
+          print("design_state fixtures OK")
+          PYEOF
+
+      - name: Validate infrastructure memory integration
+        run: |
+          python3 << 'PYEOF'
+          import os, sys, importlib.util
+          errors = []
+          kb = "memory/infrastructure/knowledge.md"
+          if not os.path.isfile(kb):
+              errors.append(f"Missing: {kb}")
+          elif os.path.getsize(kb) == 0:
+              errors.append(f"{kb}: file is empty")
+          else:
+              print(f"OK: {kb}")
+          distill_path = "plugins/infrastructure/skills/memory-keeper/distill.py"
+          if not os.path.isfile(distill_path):
+              errors.append(f"Missing: {distill_path}")
+          else:
+              spec = importlib.util.spec_from_file_location("distill", distill_path)
+              mod = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(mod)
+              if "infrastructure" not in mod.VALID_DOMAINS:
+                  errors.append("distill.py VALID_DOMAINS missing 'infrastructure'")
+              elif "infrastructure" not in mod.METRIC_FIELDS:
+                  errors.append("distill.py METRIC_FIELDS missing 'infrastructure'")
+              else:
+                  print(f"OK: distill.py registers infrastructure ({mod.METRIC_FIELDS['infrastructure']})")
+          if errors:
+              for e in errors: print(f"ERROR: {e}", file=sys.stderr)
+              sys.exit(1)
+          print("Infrastructure memory integration OK")
+          PYEOF

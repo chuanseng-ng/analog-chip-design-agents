@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ngspice-session": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/analog-chip-design-agents/plugins/infrastructure/tools/mcp-session-adapter.py",
+        "--tool",
+        "ngspice"
+      ],
+      "env": {}
+    }
+  }
+}

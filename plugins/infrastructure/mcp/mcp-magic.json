@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "magic": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/absolute/path/to/analog-chip-design-agents/plugins/infrastructure/tools/mcp-adapter.py",
+        "--wrapper",
+        "/absolute/path/to/analog-chip-design-agents/plugins/infrastructure/tools/wrap-magic.sh",
+        "--tool",
+        "magic",
+        "--description",
+        "Magic DRC / extraction via output-filtering wrapper"
+      ],
+      "env": {
+        "TOOL_TIMEOUT_S": "300"
+      }
+    }
+  }
+}

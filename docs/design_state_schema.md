@@ -4,10 +4,11 @@
 domain orchestrators read at session start and merge into on termination. It mirrors
 the role of the reference repo's `design_state.json`, re-targeted to analog/RF.
 
-> **Status: Phase 0 schema sketch.** The authoritative schema, `format_version`
-> tiers, and the `history[]` failure-classification rules are finalised in **Phase 1**
-> alongside the `meta` pipeline orchestrator. This document defines the constraints
-> shape that domain SKILL/orchestrators reference for their QoR thresholds.
+> **Status: finalised in Phase 1.** The authoritative schema lives in
+> [`plugins/meta/skills/pipeline-orchestration/SKILL.md`](../plugins/meta/skills/pipeline-orchestration/SKILL.md)
+> (§Constraints Schema, §fix_request Schema, §Failure Classification). The working
+> baseline is `format_version "1.0"`. This document summarises the constraints shape that
+> domain SKILL/orchestrators reference for their QoR thresholds.
 
 ## Constraints
 
@@ -17,7 +18,7 @@ documented per-skill defaults when a key is absent.
 ```jsonc
 {
   "design_name": "my_ldo",
-  "format_version": "0.1",
+  "format_version": "1.0",
   "constraints": {
     "supply":   { "vdd_v": 1.8, "vss_v": 0.0 },
 

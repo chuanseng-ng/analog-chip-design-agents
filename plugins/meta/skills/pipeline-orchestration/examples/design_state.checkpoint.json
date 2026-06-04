@@ -1,0 +1,148 @@
+{
+  "format_version": "1.0",
+  "design_name": "example_bandgap",
+  "created_at": "2026-04-02T09:00:00Z",
+  "updated_at": "2026-04-02T10:40:00Z",
+  "cross_domain_iteration_count": 0,
+  "pipeline_session_id": null,
+  "pipeline_config": {
+    "max_cross_domain_iterations": 3,
+    "checkpoints": ["arch_signoff", "schematic_signoff", "pex_signoff", "tapeout_signoff"]
+  },
+  "approved_checkpoints": [
+    { "stage": "arch_signoff", "approved_at": "2026-04-02T09:45:00Z", "approved_by": "user" }
+  ],
+  "pending_approval": {
+    "type": "checkpoint",
+    "stage": "schematic_signoff",
+    "agent": "circuit-design-orchestrator",
+    "reason": "checkpoint schematic_signoff requires human approval before proceeding",
+    "fix_request_id": null,
+    "last_summary": "dc_gain_db: 78, phase_margin_deg: 66, power_uw: 12 — all specs met at tt/27C",
+    "requires_user": true
+  },
+  "constraints": {
+    "supply": { "vdd_v": 1.8, "vss_v": 0.0 },
+    "specs": {
+      "dc_gain_db": null,
+      "gbw_hz": null,
+      "phase_margin_deg": 60,
+      "input_noise_nv_rthz": null,
+      "psrr_db": 60,
+      "cmrr_db": null,
+      "offset_mv_max": 2,
+      "power_mw": 0.05,
+      "settling_ns": null,
+      "thd_db": null,
+      "iip3_dbm": null
+    },
+    "rf_specs": {
+      "nf_db": null,
+      "gain_db": null,
+      "s11_db_max": -10,
+      "iip3_dbm": null,
+      "p1db_dbm": null,
+      "phase_noise_dbc_hz": null,
+      "pae_pct": null,
+      "evm_pct": null
+    },
+    "corners": {
+      "process": ["tt", "ss", "ff"],
+      "mismatch": true,
+      "temp_c": [-40, 27, 125],
+      "voltage_pct": [-10, 0, 10]
+    },
+    "yield": { "target_sigma": 3, "mc_samples": 1000 },
+    "area_um2": 8000,
+    "pdk": "sky130"
+  },
+  "fix_requests": [],
+  "archive_fix_requests": [],
+  "architecture": {
+    "selected_topology": "brokaw_bandgap",
+    "block_specs_doc": "docs/bandgap_block_specs.md",
+    "signoff": true
+  },
+  "circuit": {
+    "netlist": "netlist/bandgap.spice",
+    "schematic_ref": "sch/bandgap.sch",
+    "dc_gain_db": 78,
+    "phase_margin_deg": 66,
+    "power_mw": 0.012,
+    "signoff": false
+  },
+  "history": [
+    {
+      "timestamp": "2026-04-02T09:00:00Z",
+      "agent": "analog-architecture-orchestrator",
+      "stage": "spec_capture",
+      "decision": "proceed",
+      "confidence": "high",
+      "failure_class": "none",
+      "retry_strategy": "none",
+      "suggested_next_step": "proceed",
+      "reason": "Bandgap spec captured — 1.2V ref, <50uW, sky130; constraints.supply.vdd_v set to 1.8",
+      "constraint_ref": "supply.vdd_v"
+    },
+    {
+      "timestamp": "2026-04-02T09:40:00Z",
+      "agent": "analog-architecture-orchestrator",
+      "stage": "architecture_signoff",
+      "decision": "await_approval",
+      "confidence": "high",
+      "failure_class": "none",
+      "retry_strategy": "none",
+      "suggested_next_step": "escalate",
+      "reason": "checkpoint arch_signoff requires human approval before proceeding",
+      "constraint_ref": null
+    },
+    {
+      "timestamp": "2026-04-02T09:46:00Z",
+      "agent": "analog-architecture-orchestrator",
+      "stage": "architecture_signoff",
+      "decision": "proceed",
+      "confidence": "high",
+      "failure_class": "none",
+      "retry_strategy": "none",
+      "suggested_next_step": "proceed",
+      "reason": "arch_signoff approved by user — architecture.signoff set to true",
+      "constraint_ref": null
+    },
+    {
+      "timestamp": "2026-04-02T10:10:00Z",
+      "agent": "circuit-design-orchestrator",
+      "stage": "device_sizing",
+      "decision": "proceed",
+      "confidence": "high",
+      "failure_class": "none",
+      "retry_strategy": "none",
+      "suggested_next_step": "proceed",
+      "reason": "Devices sized; gm/Id targets met for error amp and core",
+      "constraint_ref": null
+    },
+    {
+      "timestamp": "2026-04-02T10:30:00Z",
+      "agent": "circuit-design-orchestrator",
+      "stage": "design_review",
+      "decision": "proceed",
+      "confidence": "high",
+      "failure_class": "none",
+      "retry_strategy": "none",
+      "suggested_next_step": "proceed",
+      "reason": "Pre-layout specs met at tt/27C — PM 66 deg meets constraints.specs.phase_margin_deg (60)",
+      "constraint_ref": "specs.phase_margin_deg"
+    },
+    {
+      "timestamp": "2026-04-02T10:40:00Z",
+      "agent": "circuit-design-orchestrator",
+      "stage": "schematic_signoff",
+      "decision": "await_approval",
+      "confidence": "high",
+      "failure_class": "none",
+      "retry_strategy": "none",
+      "suggested_next_step": "escalate",
+      "reason": "checkpoint schematic_signoff requires human approval before proceeding",
+      "constraint_ref": null
+    }
+  ]
+}
