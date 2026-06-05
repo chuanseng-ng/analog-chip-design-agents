@@ -1,5 +1,40 @@
 # Changelog
 
+## [Unreleased] — Phase 5: RF & EM
+
+### Added
+
+- **`analog-design-rf` — RF/mmWave design (implemented).** Seven stages (`rf_spec →
+  topology_matching → sparameter_analysis → harmonic_balance → noise_linearity →
+  loadpull_optimization → rf_signoff`) closing an LNA/mixer/VCO/PLL/PA block against the
+  `rf_specs` table across corners — S-parameter + Rollett `K`-factor stability, harmonic balance,
+  Pnoise/PAC noise & IP3, and load-pull for PAE/EVM. **Terminal/branch consumer:** loop-backs are
+  stage-local (spec/stability → `topology_matching`, ×2; convergence → `harmonic_balance`, ×2); it
+  does **not** open cross-domain fix_requests. Reads the `em` block (Touchstone + fitted lumped
+  model) as a **fixed passive data dependency**; when a passive is the limiter it escalates to the
+  user recommending an EM re-solve. Writes the expanded `rf` block (`nf_db`, `gain_db`, `iip3_dbm`,
+  `phase_noise_dbc_hz`, `p1db_dbm`, `pae_pct`, `evm_pct`, `k_factor`, `s11_db`).
+- **`analog-design-em` — EM modeling (implemented).** Seven stages (`em_setup →
+  geometry_definition → meshing → em_solve → sparameter_extraction → model_fitting → em_signoff`)
+  solving an on-chip passive/antenna, extracting a **passive** (hard-gated) Touchstone S-matrix, and
+  fitting a lumped equivalent for circuit-level RF sim. Terminal/branch producer: loop-backs are
+  stage-local (passivity/fit → `meshing`/`geometry_definition`, ×2); a fundamental geometry/stackup
+  gap escalates. Publishes the new `em` block (`touchstone`, `fitted_model`, `q_factor`, `srf_ghz`,
+  `fit_error_pct`, `passivity_pass`) that rf-design consumes.
+- **Memory seeds.** `memory/{rf,em}/knowledge.md` seeded with known patterns; `distill.py` already
+  registered both domains and their metrics.
+- **Schema docs.** `docs/design_state_schema.md` per-domain merged fields now carry the fuller `rf`
+  block and the new `em` block, with a flow note describing the `em → rf` data dependency and the
+  terminal-consumer status of the RF emphasis tier.
+
+### Notes
+
+- RF/EM are deliberately **not** wired into the meta `fix_request` loop (no `route_to`/`created_by`/
+  `failure_class` enum changes) — mirroring the `architecture` and `characterization` precedent.
+  The alternative (automating RF↔circuit-design and em↔rf re-solves via fix_requests) is recorded
+  as a deferred enhancement in [`FUTURE_WORK.md`](FUTURE_WORK.md).
+- The remaining 1 domain (Phase 6: `ams-integration`) stays **skeleton** SKILL/orchestrator.
+
 ## [Unreleased] — Phase 4: sign-off depth
 
 ### Added
@@ -25,7 +60,7 @@
 ### Notes
 
 - The remaining 3 domains (Phases 5–6: `rf`, `em`, `ams-integration`) stay **skeleton**
-  SKILL/orchestrators.
+  SKILL/orchestrators. *(Phase 5 since implemented `rf` and `em`; only `ams-integration` remains.)*
 
 ## [Unreleased] — Phase 3: physical-design tier
 
