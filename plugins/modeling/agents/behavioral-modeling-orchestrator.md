@@ -45,7 +45,7 @@ fault here via the pipeline-orchestrator):
 1. Read the entry from `design_state.fix_requests[]`; set `status: open→claimed` (append a `fix_request.history[]` entry).
 2. Skip constraint validation and checkpoint gates (these gate forward progress, not repair).
 3. Re-enter at `va_authoring` (or `model_validation` if only re-validation is needed), targeting the `spec_or_metric` named in the entry.
-4. On success, set `status: claimed→fixed`, populate the response object (mirror the `circuit_response` shape: `fixed_at`, `diff_summary`, `files_changed`), and terminate so the pipeline-orchestrator can re-validate via ams-verification.
+4. On success, set `status: claimed→fixed`, populate the canonical `fix_request.circuit_response` field (an object matching the `circuit_response` shape: `fixed_at`, `diff_summary`, `files_changed`), and terminate so the pipeline-orchestrator can re-validate via ams-verification.
 
 ## Loop-Back Rules
 - model_compilation FAIL (compile error)         → va_authoring        (max 3×)  (failure_class: tool_error|convergence)

@@ -72,8 +72,8 @@ documented per-skill defaults when a key is absent.
 
 ## Per-domain merged fields
 
-On termination each orchestrator merges its domain block (Phase-1 finalised shape),
-e.g.:
+On termination each orchestrator merges its domain block (current merged shape,
+Phase 1–2), e.g.:
 
 ```jsonc
 {

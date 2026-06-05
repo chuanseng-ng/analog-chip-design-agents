@@ -87,7 +87,7 @@ terminate with `decision: escalate` so the pipeline-orchestrator dispatches the 
 ## Behaviour Rules
 1. Read the `ams-verification` skill before executing each stage.
 2. Never proceed past a FAIL without applying the loop-back rule.
-3. Constraint validation (at `ams_testbench`, skip in re-validation mode): require `constraints.supply.vdd_v` and a DUT — at least one of `design_state.circuit.netlist` or `design_state.modeling` present. On a missing required key, set `pending_approval.type="constraint_gap"`, append an escalate history entry (`failure_class: spec_gap`, `retry_strategy: escalate`), and halt.
+3. Constraint validation (at `ams_testbench`, skip in re-validation mode): require `constraints.supply.vdd_v` and a runnable DUT — `design_state.circuit.netlist`, or a usable model artifact (`design_state.modeling.model_source` or `design_state.modeling.osdi`); a bare `design_state.modeling` object with no artifact does not qualify. On a missing required key, set `pending_approval.type="constraint_gap"`, append an escalate history entry (`failure_class: spec_gap`, `retry_strategy: escalate`), and halt.
 4. Every verified spec must be read from an assertion/scoreboard or coverage report — never by eye.
 5. Per-stage trace: after each stage, append one `history[]` entry to `design_state.json` (10-field schema); derive `retry_strategy` from `failure_class` (`functional|connectivity ⇒ refine`; `convergence|tool_error ⇒ regenerate`; `none ⇒ none`). Tag `constraint_ref` (e.g. a fix_request id, or `"supply.vdd_v"`).
 6. Output: sign-off report, coverage/regression tables, co-sim waveforms, and any fix_request entries.
