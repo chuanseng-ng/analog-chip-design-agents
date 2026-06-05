@@ -73,7 +73,7 @@ documented per-skill defaults when a key is absent.
 ## Per-domain merged fields
 
 On termination each orchestrator merges its domain block (current merged shape,
-Phase 1–2), e.g.:
+Phase 1–4), e.g.:
 
 ```jsonc
 {
@@ -87,8 +87,8 @@ Phase 1–2), e.g.:
   "physical_verification": { "drc_violations": null, "lvs_errors": null, "antenna_violations": null, "signoff": false },
   "pex":         { "netlist": "…", "r_count": null, "c_count": null, "coupling_caps": null, "signoff": false },
   "post_layout": { "specs_pass": false, "worst_pm_deg": null, "spec_degradation_pct": null, "failing_corners": null, "signoff": false },
-  "reliability": { "em_margin_pct": null, "ir_drop_pct": null, "signoff": false },
-  "char":        { "lib": "…", "signoff": false },
+  "reliability": { "em_margin_pct": null, "ir_drop_pct": null, "esd_violations": null, "signoff": false },
+  "char":        { "lib": "…", "lib_arcs": null, "char_error_pct": null, "corners_covered": null, "signoff": false },
   "rf":          { "nf_db": null, "iip3_dbm": null, "phase_noise_dbc_hz": null, "signoff": false }
 }
 ```
@@ -96,12 +96,16 @@ Phase 1–2), e.g.:
 The `architecture` block is **upstream**: it is written by the analog-architecture
 orchestrator before circuit design begins, and circuit-design reads
 `architecture.blocks[].specs` as its per-block `constraints.specs` source. The physical tier
-flows `layout → physical_verification → pex → post_layout`. AMS verification, physical-
-verification, and post-layout open `fix_request`s with an optional `route_to` hint
+flows `layout → physical_verification → pex → post_layout`, and the sign-off-depth tier continues
+`reliability → char` on the extracted netlist (reliability EM/IR/ESD/latch-up/aging, then
+characterization of the `.lib` + behavioral views). AMS verification, physical-verification,
+post-layout, and reliability open `fix_request`s with an optional `route_to` hint
 (`circuit-design` | `behavioral-modeling` | `custom-layout`) so the pipeline-orchestrator
 dispatches the right servicer — e.g. a DRC/LVS fault (`failure_class: drc_lvs`/`connectivity`)
 routes to `custom-layout`, a parasitic-induced post-layout spec loss to `custom-layout` or
-`circuit-design`.
+`circuit-design`, an EM/IR reliability fault to `custom-layout` and an ESD/aging shortfall to
+`circuit-design`. Characterization is a terminal consumer: its loop-backs are stage-local and it
+escalates to the user rather than opening a cross-domain `fix_request`.
 
 ## History trace
 

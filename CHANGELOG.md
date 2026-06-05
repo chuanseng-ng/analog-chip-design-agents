@@ -1,5 +1,32 @@
 # Changelog
 
+## [Unreleased] — Phase 4: sign-off depth
+
+### Added
+
+- **`analog-design-reliability` — reliability (implemented).** Six stages (`em_analysis →
+  ir_drop → esd_check → latchup_check → aging_analysis → reliability_signoff`) with EM
+  current-density margin, power-grid IR-drop, ESD path coverage, latch-up tap/guard-ring checks,
+  and HCI/NBTI aging on the extracted netlist. **Opens** fix_requests → custom-layout (EM/IR,
+  `failure_class: drc_lvs`) or circuit-design (ESD/aging, `failure_class: spec_violation`). Writes
+  the `reliability` block (`em_margin_pct`, `ir_drop_pct`, `esd_violations`).
+- **`analog-design-characterization` — characterization (implemented).** Seven stages
+  (`char_setup → timing_char → power_char → noise_char → liberty_generation → model_validation →
+  char_signoff`) characterizing timing/power/noise across PVT corners, emitting validated Liberty
+  (`.lib`) + behavioral models with model-vs-SPICE and monotonicity gates. Terminal consumer:
+  loop-backs are stage-local (`model_validation → char_setup`, ×2); a fundamental gap escalates to
+  the user rather than opening a cross-domain fix_request. Writes the `char` block (`lib`,
+  `lib_arcs`, `char_error_pct`, `corners_covered`).
+- **Memory seeds.** `memory/{reliability,characterization}/knowledge.md` seeded with known
+  patterns; `distill.py` already registered both domains and their metrics.
+- **Schema docs.** `docs/design_state_schema.md` per-domain merged fields now carry the fuller
+  `reliability` and `char` blocks, and the flow note extends through the sign-off-depth tier.
+
+### Notes
+
+- The remaining 3 domains (Phases 5–6: `rf`, `em`, `ams-integration`) stay **skeleton**
+  SKILL/orchestrators.
+
 ## [Unreleased] — Phase 3: physical-design tier
 
 ### Added
