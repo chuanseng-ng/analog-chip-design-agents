@@ -50,10 +50,11 @@ re-targeted to the analog/mixed-signal + RF flow.
 
 ## Install (preview)
 
-> The eleven Phase 1–3 domains (circuit, simulation, infrastructure, meta, architecture,
-> modeling, ams-verification, layout, physical-verification, extraction, post-layout) are
-> fully implemented. The remaining Phase 4–6 domains are skeletons until their phase lands;
-> installing them now gives you the structure and planned scope, not yet the full flow logic.
+> The thirteen Phase 1–4 domains (circuit, simulation, infrastructure, meta, architecture,
+> modeling, ams-verification, layout, physical-verification, extraction, post-layout,
+> reliability, characterization) are fully implemented. The remaining Phase 5–6 domains are
+> skeletons until their phase lands; installing them now gives you the structure and planned
+> scope, not yet the full flow logic.
 
 ```text
 /plugin marketplace add github:chuanseng-ng/analog-chip-design-agents

@@ -119,8 +119,11 @@ an ESD shortfall routes to circuit-design (add/resize clamps).
    level (e.g. 2 kV HBM); check clamp trigger/hold and series-resistance budget.
 2. Confirm cross-domain (supply-to-supply) clamps exist and the discharge current path has
    adequate metal width (ties into EM).
-3. An ESD shortfall is a circuit-topology gap, not a routing fault: open a `fix_request` to
-   circuit-design (`failure_class: spec_violation`, add/resize the clamp).
+3. Route by root cause: a **clamp/topology** shortfall (missing/undersized clamp, wrong
+   trigger/hold, series-resistance budget) is a circuit-design gap — open a `fix_request` to
+   circuit-design (`failure_class: spec_violation`, add/resize the clamp). A **layout-induced**
+   shortfall (discharge-metal width, missing/weak ties) is a routing gap — open a `fix_request`
+   to custom-layout (`failure_class: drc_lvs`, widen the ESD bus / add ties).
 
 ### QoR Metrics to Evaluate
 - `esd_violations` = 0 (every IO/supply has a qualified discharge path)
@@ -204,7 +207,9 @@ an ESD shortfall routes to circuit-design (add/resize clamps).
 
 ### Failure Escalation
 - EM / IR fail → `fix_request` (`failure_class: drc_lvs`) → custom-layout (widen / strap)
-- ESD / aging spec fail → `fix_request` (`failure_class: spec_violation`) → circuit-design
+- ESD clamp/topology fail → `fix_request` (`failure_class: spec_violation`) → circuit-design
+- ESD discharge-metal / ties fail → `fix_request` (`failure_class: drc_lvs`) → custom-layout
+- Aging spec fail → `fix_request` (`failure_class: spec_violation`) → circuit-design
 - Latch-up tap/ring fail → `fix_request` (`failure_class: drc_lvs`) → custom-layout
 
 ### Output Required

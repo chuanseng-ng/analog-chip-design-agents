@@ -49,7 +49,8 @@ existing entry.
 ## Loop-Back Rules
 - em_analysis FAIL              → open fix_request → custom-layout (failure_class: drc_lvs)        (max 2×)
 - ir_drop FAIL                  → open fix_request → custom-layout (failure_class: drc_lvs)        (max 2×)
-- esd_check FAIL                → open fix_request → circuit-design (failure_class: spec_violation) (max 2×)
+- esd_check FAIL (clamp/topology)       → open fix_request → circuit-design (failure_class: spec_violation) (max 2×)
+- esd_check FAIL (discharge metal/ties) → open fix_request → custom-layout (failure_class: drc_lvs)         (max 2×)
 - latchup_check FAIL            → open fix_request → custom-layout (failure_class: drc_lvs)        (max 2×)
 - aging_analysis FAIL           → open fix_request → circuit-design (failure_class: spec_violation) (max 2×)
 - any loop exceeds its cap      → escalate to the user with full state + recommendation
@@ -63,11 +64,12 @@ existing entry.
 ## Opening a fix_request
 On an unresolved EM/IR/ESD/latch-up/aging violation, append an entry to
 `design_state.fix_requests[]` per the pipeline-orchestration `fix_request` schema, with
-`created_by: "reliability-orchestrator"`, the `failure_class` (`drc_lvs` for EM/IR/latch-up,
-`spec_violation` for ESD/aging), the matching `retry_strategy` (`drc_lvs ⇒ regenerate`,
-`spec_violation ⇒ refine`), the `analysis_name` (e.g. `em_analysis`, `ir_drop`, `esd_check`,
-`aging_analysis`), `spec_or_metric` (the violated limit/spec), and `suspected_circuit`. Set
-`route_to: "custom-layout"` (EM/IR/latch-up) or `"circuit-design"` (ESD/aging), `status: open`,
+`created_by: "reliability-orchestrator"`, the `failure_class` (`drc_lvs` for EM/IR/latch-up and
+layout-induced ESD; `spec_violation` for ESD clamp/topology and aging), the matching
+`retry_strategy` (`drc_lvs ⇒ regenerate`, `spec_violation ⇒ refine`), the `analysis_name` (e.g.
+`em_analysis`, `ir_drop`, `esd_check`, `aging_analysis`), `spec_or_metric` (the violated
+limit/spec), and `suspected_circuit`. Set `route_to: "custom-layout"` (EM/IR/latch-up, ESD
+discharge-metal/ties) or `"circuit-design"` (ESD clamp/topology, aging), `status: open`,
 append a `fix_request.history[]` entry, and terminate with `decision: escalate` so the
 pipeline-orchestrator dispatches the servicer.
 
