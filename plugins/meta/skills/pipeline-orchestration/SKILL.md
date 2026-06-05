@@ -34,8 +34,8 @@ The protocol has three participants:
 | Participant | Role |
 |---|---|
 | **circuit-simulation-orchestrator** / **post-layout-signoff-orchestrator** / **ams-verification-orchestrator** | Detects the failure; writes a `fix_request` entry to `design_state.fix_requests[]` with `status=open`; terminates with `decision=escalate`. |
-| **circuit-design-orchestrator** | Reads the open `fix_request`; sets `status=claimed`; re-sizes/re-tops the circuit; sets `status=fixed` with `circuit_response`; terminates. |
-| **pipeline-orchestrator** | Detects open entries; assigns a `pipeline_session_id`; dispatches circuit-design then re-simulation in sequence; enforces a configurable cap (default 3, via `pipeline_config.max_cross_domain_iterations`); archives resolved entries on signoff; escalates via `pending_approval` if cap exceeded. |
+| **circuit-design-orchestrator** / **behavioral-modeling-orchestrator** | Reads the open `fix_request`; sets `status=claimed`; the circuit servicer re-sizes/re-tops the circuit, the modeling servicer re-authors/re-validates the behavioral model; sets `status=fixed` with `circuit_response`; terminates. The servicer is chosen by the entry's `route_to` hint (default `circuit-design`). |
+| **pipeline-orchestrator** | Detects open entries; assigns a `pipeline_session_id`; dispatches the chosen servicer (circuit-design or behavioral-modeling) then re-validation in sequence; enforces a configurable cap (default 3, via `pipeline_config.max_cross_domain_iterations`); archives resolved entries on signoff; escalates via `pending_approval` if cap exceeded. |
 
 ## Domain Rules
 
@@ -51,6 +51,7 @@ All entries in `design_state.fix_requests[]` must conform to this schema:
   "created_by": "circuit-simulation-orchestrator | post-layout-signoff-orchestrator | ams-verification-orchestrator",
   "failure_class": "spec_violation | convergence | functional | yield",
   "retry_strategy": "refine",
+  "route_to": "circuit-design | behavioral-modeling",
   "analysis_name": "<analysis or testbench name, e.g. ac_stability, tran_settling>",
   "spec_or_metric": "<violated spec key, e.g. phase_margin_deg, nf_db, or null>",
   "corner": "<failing corner, e.g. ss_125C_vmin, or null>",
@@ -72,7 +73,12 @@ All entries in `design_state.fix_requests[]` must conform to this schema:
 }
 ```
 
-`circuit_response` (populated by circuit-design-orchestrator on close):
+`route_to` is **optional** (default `circuit-design` when absent) — it names the servicer the
+pipeline-orchestrator dispatches: `behavioral-modeling` for a model fault (RNM/cosim
+divergence indicting the model) or `circuit-design` for a circuit fault. Producers set it; the
+pipeline-orchestrator reads it. Omitting it preserves the legacy circuit-design routing.
+
+`circuit_response` (populated by the servicer — circuit-design or behavioral-modeling — on close):
 ```json
 {
   "fixed_at": "<ISO-8601>",
@@ -95,7 +101,7 @@ All entries in `design_state.fix_requests[]` must conform to this schema:
 
 ### Ownership rules
 
-- `circuit-design-orchestrator` owns the `open→claimed` and `claimed→fixed|abandoned` transitions.
+- The chosen servicer (`circuit-design-orchestrator` or, when `route_to: behavioral-modeling`, `behavioral-modeling-orchestrator`) owns the `open→claimed` and `claimed→fixed|abandoned` transitions.
 - Only the `pipeline-orchestrator` sets `cross_domain_iteration_count`, `pipeline_session_id`, `pipeline_config`, and moves resolved entries to `archive_fix_requests[]`.
 - Domain orchestrators **may** set `pending_approval` exclusively with `type: "checkpoint"` at their own sign-off stage; `type: "escalation"` remains the sole responsibility of the `pipeline-orchestrator`.
 - `approved_checkpoints[]` is written by the user (or by an orchestrator executing an explicit approval instruction) and read by all orchestrators.
@@ -331,12 +337,17 @@ Programmatic branches must read structured fields — do not re-derive intent fr
 ### Dispatch pattern (pipeline-orchestrator)
 
 Sequential dispatch — never parallel:
-1. circuit-design orchestrator (fix the circuit) — block until complete.
-2. circuit-simulation (or post-layout / ams-verification) orchestrator (validate the fix) — block until complete.
+1. **Servicer** (fix the fault) — block until complete. Choose by the entry's `route_to` hint:
+   `behavioral-modeling` → the modeling orchestrator; otherwise (default) circuit-design.
+2. **Re-validation** — circuit-simulation (or post-layout / ams-verification) orchestrator
+   validates the fix — block until complete. A model fix routed from ams-verification is
+   re-validated by ams-verification.
 
 Spawn form:
 - Circuit: `subagent_type: analog-design-circuit:circuit-design-orchestrator`
+- Modeling: `subagent_type: analog-design-modeling:behavioral-modeling-orchestrator`
 - Simulation: `subagent_type: analog-design-simulation:circuit-simulation-orchestrator`
+- AMS re-validation: `subagent_type: analog-design-ams-verification:ams-verification-orchestrator`
 
 Always pass the `fix_request.id` in the subagent prompt.
 
