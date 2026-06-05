@@ -77,6 +77,10 @@ e.g.:
 
 ```jsonc
 {
+  "architecture": { "chain_type": "…", "blocks": [ { "name": "…", "specs": {…}, "topology_class": "…", "feasibility": "low|medium|high" } ],
+                    "noise_budget_nv": null, "power_budget_mw": null, "area_estimate_um2": null, "signoff": false },
+  "modeling":    { "model_source": "…", "osdi": "…", "connect_modules": ["…"], "model_error_pct": null, "sim_speedup_x": null, "rnm_coverage_pct": null, "signoff": false },
+  "ams":         { "testbench": "…", "functional_coverage_pct": null, "rnm_mismatch_count": null, "regression_failures": null, "specs_pass": false, "signoff": false },
   "circuit":     { "netlist": "…", "dc_gain_db": null, "phase_margin_deg": null, "signoff": false },
   "sim":         { "specs_pass": false, "mc_yield_sigma": null, "signoff": false },
   "layout":      { "gds": "…", "area_um2": null, "signoff": false },
@@ -87,6 +91,12 @@ e.g.:
   "rf":          { "nf_db": null, "iip3_dbm": null, "phase_noise_dbc_hz": null, "signoff": false }
 }
 ```
+
+The `architecture` block is **upstream**: it is written by the analog-architecture
+orchestrator before circuit design begins, and circuit-design reads
+`architecture.blocks[].specs` as its per-block `constraints.specs` source. AMS verification
+opens `fix_request`s with an optional `route_to` hint (`circuit-design` | `behavioral-modeling`)
+so the pipeline-orchestrator dispatches the right servicer.
 
 ## History trace
 

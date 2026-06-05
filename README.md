@@ -6,15 +6,16 @@
 
 [![Validate](https://github.com/chuanseng-ng/analog-chip-design-agents/actions/workflows/validate.yml/badge.svg)](https://github.com/chuanseng-ng/analog-chip-design-agents/actions/workflows/validate.yml)
 
-> **🚧 Status: Phase 1 (core analog spine) implemented.** The marketplace registry,
-> per-plugin manifests, CI, and the shared `design_state.json` schema are in place. The
-> **core spine** — `analog-design-circuit`, `analog-design-simulation`,
-> `analog-design-infrastructure`, and `analog-design-meta` — is now fully implemented
-> (detailed stage rules, memory wiring, fix_request loop, infrastructure tooling). The
-> remaining 12 domains ship **skeleton** SKILL/orchestrators (stage sequence, tool lists,
-> QoR metrics) and are filled in across phases 2–6. See [`PLAN.md`](PLAN.md) for the roadmap
-> and phase order; the **Phase** column below marks each domain's target phase
-> (1 = implemented).
+> **🚧 Status: Phase 2 (HDL/AMS) implemented.** The marketplace registry, per-plugin
+> manifests, CI, and the shared `design_state.json` schema are in place. The **core spine**
+> (Phase 1) — `analog-design-circuit`, `analog-design-simulation`,
+> `analog-design-infrastructure`, and `analog-design-meta` — plus the **HDL/AMS milestone**
+> (Phase 2) — `analog-design-architecture`, `analog-design-modeling`, and
+> `analog-design-ams-verification` — are now fully implemented (detailed stage rules, memory
+> wiring, fix_request loop including AMS→modeling routing). The remaining 9 domains ship
+> **skeleton** SKILL/orchestrators (stage sequence, tool lists, QoR metrics) and are filled
+> in across phases 3–6. See [`PLAN.md`](PLAN.md) for the roadmap and phase order; the
+> **Phase** column below marks each domain's target phase (1–2 = implemented).
 
 This marketplace mirrors the architecture of
 [`digital-chip-design-agents`](https://github.com/chuanseng-ng/digital-chip-design-agents),

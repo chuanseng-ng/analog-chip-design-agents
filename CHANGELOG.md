@@ -1,5 +1,40 @@
 # Changelog
 
+## [Unreleased] — Phase 2: architecture, modeling & AMS verification
+
+### Added
+
+- **`analog-design-architecture` — analog architecture (implemented).** Five stages
+  (`spec_capture → signal_chain_budgeting → topology_partitioning → behavioral_feasibility →
+  architecture_signoff`) with Friis noise / IIP3-cascade budgeting rules, per-block power/area
+  allocation, QoR gates keyed to `constraints.specs`/`rf_specs`/`area_um2`, the
+  `architecture_signoff` checkpoint, and memory wiring. As the upstream domain it writes the
+  `architecture` block to `design_state.json`; circuit-design reads `architecture.blocks[].specs`
+  as its per-block spec source.
+- **`analog-design-modeling` — behavioral / AMS modeling (implemented).** Six stages
+  (`model_planning → va_authoring → model_compilation → connect_rule_setup → model_validation →
+  model_signoff`) with Verilog-A/OSDI (OpenVAF) authoring + convergence rules, connect-module
+  setup, model-vs-SPICE accuracy/speed-up/RNM-coverage gates, fix-request-servicing mode (it
+  services model faults routed from AMS verification), and memory wiring.
+- **`analog-design-ams-verification` — AMS verification (implemented).** Six stages
+  (`ams_testbench → connect_module_setup → analog_digital_cosim → rnm_regression →
+  coverage_closure → ams_signoff`) with cocotb co-sim, RNM regression, functional-coverage
+  closure, and the fix-request-opening flow. Opens `fix_request`s with an optional `route_to`
+  hint routed to behavioral-modeling (model fault) or circuit-design (circuit fault).
+- **Meta fix_request routing (enhanced).** Added the optional `route_to` field to the
+  `fix_request` schema and taught the pipeline-orchestrator to dispatch the chosen servicer
+  (circuit-design by default, behavioral-modeling when indicated), closing the AMS→modeling
+  repair loop. Existing fixtures unchanged (the field is optional; legacy routing preserved).
+- **Memory seeds.** `memory/architecture/knowledge.md`, `memory/modeling/knowledge.md`, and
+  `memory/ams-verification/knowledge.md` seeded with known patterns; `distill.py` already
+  registered the three domains and their metric fields.
+- **Schema docs.** `docs/design_state_schema.md` per-domain merged fields now include the
+  `architecture`, `modeling`, and `ams` blocks.
+
+### Notes
+
+- The remaining 9 domains (Phases 3–6) stay **skeleton** SKILL/orchestrators.
+
 ## [Unreleased] — Phase 1: core analog spine
 
 ### Added
