@@ -83,9 +83,10 @@ Phase 1–2), e.g.:
   "ams":         { "testbench": "…", "functional_coverage_pct": null, "rnm_mismatch_count": null, "regression_failures": null, "specs_pass": false, "signoff": false },
   "circuit":     { "netlist": "…", "dc_gain_db": null, "phase_margin_deg": null, "signoff": false },
   "sim":         { "specs_pass": false, "mc_yield_sigma": null, "signoff": false },
-  "layout":      { "gds": "…", "area_um2": null, "signoff": false },
-  "pex":         { "netlist": "…", "signoff": false },
-  "post_layout": { "specs_pass": false, "signoff": false },
+  "layout":      { "gds": "…", "area_um2": null, "matching_sigma_pct": null, "density_pct": null, "signoff": false },
+  "physical_verification": { "drc_violations": null, "lvs_errors": null, "antenna_violations": null, "signoff": false },
+  "pex":         { "netlist": "…", "r_count": null, "c_count": null, "coupling_caps": null, "signoff": false },
+  "post_layout": { "specs_pass": false, "worst_pm_deg": null, "spec_degradation_pct": null, "failing_corners": null, "signoff": false },
   "reliability": { "em_margin_pct": null, "ir_drop_pct": null, "signoff": false },
   "char":        { "lib": "…", "signoff": false },
   "rf":          { "nf_db": null, "iip3_dbm": null, "phase_noise_dbc_hz": null, "signoff": false }
@@ -94,9 +95,13 @@ Phase 1–2), e.g.:
 
 The `architecture` block is **upstream**: it is written by the analog-architecture
 orchestrator before circuit design begins, and circuit-design reads
-`architecture.blocks[].specs` as its per-block `constraints.specs` source. AMS verification
-opens `fix_request`s with an optional `route_to` hint (`circuit-design` | `behavioral-modeling`)
-so the pipeline-orchestrator dispatches the right servicer.
+`architecture.blocks[].specs` as its per-block `constraints.specs` source. The physical tier
+flows `layout → physical_verification → pex → post_layout`. AMS verification, physical-
+verification, and post-layout open `fix_request`s with an optional `route_to` hint
+(`circuit-design` | `behavioral-modeling` | `custom-layout`) so the pipeline-orchestrator
+dispatches the right servicer — e.g. a DRC/LVS fault (`failure_class: drc_lvs`/`connectivity`)
+routes to `custom-layout`, a parasitic-induced post-layout spec loss to `custom-layout` or
+`circuit-design`.
 
 ## History trace
 

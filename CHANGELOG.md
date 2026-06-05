@@ -1,5 +1,42 @@
 # Changelog
 
+## [Unreleased] — Phase 3: physical-design tier
+
+### Added
+
+- **`analog-design-layout` — custom layout (implemented).** Six stages (`layout_floorplan →
+  device_generation → analog_placement → analog_routing → layout_finishing → layout_check`)
+  with common-centroid/interdigitation matching, symmetric placement, shielded routing, and
+  pre-DRC checks. **Services** fix_requests routed to custom-layout (DRC/LVS repair, parasitic
+  reduction). Writes the `layout` block.
+- **`analog-design-physical-verification` — physical verification (implemented).** Five stages
+  (`drc → lvs → antenna_erc → density_dfm → pv_signoff`) with Magic/KLayout DRC, Netgen LVS,
+  antenna/ERC, and density checks. **Opens** fix_requests → custom-layout
+  (`failure_class: drc_lvs`/`connectivity`, `route_to: custom-layout`). Writes the
+  `physical_verification` block.
+- **`analog-design-extraction` — parasitic extraction (implemented).** Five stages
+  (`extraction_setup → rc_extraction → coupling_extraction → netlist_back_annotation →
+  pex_signoff`) building the back-annotated PEX netlist; the `pex_signoff` checkpoint; flags
+  large parasitic degradation to custom-layout. Writes the `pex` block.
+- **`analog-design-post-layout` — post-layout sign-off (implemented).** Five stages
+  (`pex_netlist_assembly → post_layout_corner_sim → spec_reverification → margin_analysis →
+  tapeout_signoff`) re-closing specs on the extracted netlist; the `tapeout_signoff`
+  human-approval checkpoint. **Opens** fix_requests → custom-layout (parasitic) or
+  circuit-design (fundamental). Writes the `post_layout` block.
+- **Meta fix_request routing (enhanced).** Added `custom-layout` to the `route_to` enum and
+  `drc_lvs`/`connectivity` to the fix_request `failure_class` enum (and to `VALID_FR_FAILURE`
+  in CI); added `custom-layout-orchestrator` as a servicer plus physical-verification/
+  parasitic-extraction producers to the participants/dispatch wiring, closing the
+  DRC/LVS→layout and parasitic→layout repair loops.
+- **Memory seeds.** `memory/{layout,physical-verification,extraction,post-layout}/knowledge.md`
+  seeded with known patterns; `distill.py` already registered the four domains and metrics.
+- **Schema docs.** `docs/design_state_schema.md` per-domain merged fields now carry the fuller
+  `layout`/`pex`/`post_layout` blocks and a new `physical_verification` block.
+
+### Notes
+
+- The remaining 5 domains (Phases 4–6) stay **skeleton** SKILL/orchestrators.
+
 ## [Unreleased] — Phase 2: architecture, modeling & AMS verification
 
 ### Added
