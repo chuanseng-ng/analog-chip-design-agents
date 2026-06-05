@@ -102,8 +102,8 @@ the spec).
    eye; `K < 1` in-band is a stability fail regardless of spec margin.
 5. Per-stage trace: after each stage, append one `history[]` entry to `design_state.json`
    (10-field schema); derive `retry_strategy` from `failure_class` (`convergence|tool_error ⇒
-   regenerate`; `spec_violation ⇒ refine`; `none ⇒ none`). Tag `constraint_ref` (e.g.
-   `"rf_specs.nf_db"`, `"rf_specs.s11_db_max"`, or null).
+   regenerate`; `spec_violation ⇒ refine`; `spec_gap|resource_limit ⇒ escalate`; `none ⇒ none`).
+   Tag `constraint_ref` (e.g. `"rf_specs.nf_db"`, `"rf_specs.s11_db_max"`, or null).
 6. Output: the RF sign-off report, the published S-parameter/HB/Pnoise artifacts, and the spec
    compliance table.
 

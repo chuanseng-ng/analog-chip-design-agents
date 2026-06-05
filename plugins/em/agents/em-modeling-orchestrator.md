@@ -49,10 +49,11 @@ residual / passivity report), **never** the raw field dump or the full Touchston
 output consumes context).
 
 ## Re-solve / Fix-Servicing Mode
-When invoked to re-solve a passive (a prior session asked the user to route a passive gap and they
-approved a re-solve): skip constraint validation, re-run from `em_setup` (or the indicated stage)
-against the refined geometry/mesh. If the model now signs off, report PASS so a caller can advance;
-otherwise escalate.
+When re-invoked to re-solve a passive (a prior RF session escalated to the user, who approved
+routing the passive/spec gap back to em-modeling — there is **no** automated RF→EM `fix_request`
+handoff): skip constraint validation, re-run from `em_setup` (or the indicated stage) against the
+refined geometry/mesh. If the model now signs off, report PASS so the re-invoking caller (the
+workflow / pipeline orchestrator, or the user) can advance RF; otherwise escalate to the user.
 
 ## Loop-Back Rules
 - sparameter_extraction FAIL (non-passive S-matrix) → loop_back_to:meshing (refine), then geometry_definition (max 2×)
@@ -71,8 +72,9 @@ otherwise escalate.
 ## Escalation (no cross-domain fix_request)
 EM modeling does not open `fix_request`s. When passivity/fit fail after the retry cap, set
 `pending_approval.type="escalation"`, append an escalate `history[]` entry
-(`failure_class: convergence`, `retry_strategy: escalate`), report the failing frequency/metric and
-a recommendation (re-mesh, change geometry, or relax the band), and halt.
+(`failure_class: spec_violation`, `retry_strategy: escalate` — the solver converged; a non-passive
+or out-of-budget model is a quality/spec failure, not solver non-convergence), report the failing
+frequency/metric and a recommendation (re-mesh, change geometry, or relax the band), and halt.
 
 ## Stage Agent Output Format
 ```json
@@ -101,8 +103,8 @@ a recommendation (re-mesh, change geometry, or relax the band), and halt.
    from the raw field dump.
 5. Per-stage trace: after each stage, append one `history[]` entry to `design_state.json`
    (10-field schema); derive `retry_strategy` from `failure_class` (`convergence|tool_error ⇒
-   regenerate`; `none ⇒ none`; cap/runtime ⇒ `escalate`). Tag `constraint_ref` (the failing
-   frequency/metric or null).
+   regenerate`; `spec_violation ⇒ refine`; `spec_gap|resource_limit ⇒ escalate`; `none ⇒ none`).
+   Tag `constraint_ref` (the failing frequency/metric or null).
 6. Output: the EM sign-off report and the published Touchstone + fitted lumped model.
 
 ## Memory
@@ -113,7 +115,9 @@ solver-selection rules, PDK/tool quirks) and `memory/em/run_state.md` (resume) b
 
 ### Write: run state (first action)
 Write `memory/em/run_state.md` with `run_id` (`em_<YYYYMMDD>_<HHMMSS>`), `design_name`, `pdk`,
-`tool`, `start_time`, `last_stage`. Update `last_stage` after each stage.
+`tool`, `start_time`, `last_stage`. Update `last_stage` to the completed stage name only after each
+stage finishes successfully (do not advance it on a failure or loop-back, so resume restarts from
+the last good stage).
 
 ### Write: per-stage
 Upsert one JSON line in `memory/em/experiences.jsonl` keyed by `run_id`:
