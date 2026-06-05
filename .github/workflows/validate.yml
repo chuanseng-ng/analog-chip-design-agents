@@ -155,7 +155,7 @@ jobs:
               "drc_lvs": "regenerate", "connectivity": "refine", "reliability": "refine",
               "tool_error": "regenerate", "spec_gap": "escalate", "resource_limit": "escalate",
           }
-          VALID_FR_FAILURE = {"spec_violation", "convergence", "functional", "yield"}
+          VALID_FR_FAILURE = {"spec_violation", "convergence", "functional", "yield", "drc_lvs", "connectivity"}
           VALID_FR_STATUS = {"open", "claimed", "fixed", "abandoned"}
           FR_REQUIRED = ["id", "created_at", "updated_at", "created_by", "failure_class",
                          "retry_strategy", "analysis_name", "spec_or_metric", "corner",

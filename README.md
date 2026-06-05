@@ -6,16 +6,16 @@
 
 [![Validate](https://github.com/chuanseng-ng/analog-chip-design-agents/actions/workflows/validate.yml/badge.svg)](https://github.com/chuanseng-ng/analog-chip-design-agents/actions/workflows/validate.yml)
 
-> **🚧 Status: Phase 2 (HDL/AMS) implemented.** The marketplace registry, per-plugin
+> **🚧 Status: Phase 3 (Physical) implemented.** The marketplace registry, per-plugin
 > manifests, CI, and the shared `design_state.json` schema are in place. The **core spine**
-> (Phase 1) — `analog-design-circuit`, `analog-design-simulation`,
-> `analog-design-infrastructure`, and `analog-design-meta` — plus the **HDL/AMS milestone**
-> (Phase 2) — `analog-design-architecture`, `analog-design-modeling`, and
-> `analog-design-ams-verification` — are now fully implemented (detailed stage rules, memory
-> wiring, fix_request loop including AMS→modeling routing). The remaining 9 domains ship
-> **skeleton** SKILL/orchestrators (stage sequence, tool lists, QoR metrics) and are filled
-> in across phases 3–6. See [`PLAN.md`](PLAN.md) for the roadmap and phase order; the
-> **Phase** column below marks each domain's target phase (1–2 = implemented).
+> (Phase 1: circuit, simulation, infrastructure, meta), the **HDL/AMS milestone** (Phase 2:
+> architecture, modeling, ams-verification), and the **physical tier** (Phase 3:
+> `analog-design-layout`, `analog-design-physical-verification`, `analog-design-extraction`,
+> and `analog-design-post-layout`) are now fully implemented (detailed stage rules, memory
+> wiring, fix_request loop including AMS→modeling and DRC/LVS→layout routing). The remaining 5
+> domains ship **skeleton** SKILL/orchestrators (stage sequence, tool lists, QoR metrics) and
+> are filled in across phases 4–6. See [`PLAN.md`](PLAN.md) for the roadmap and phase order;
+> the **Phase** column below marks each domain's target phase (1–3 = implemented).
 
 This marketplace mirrors the architecture of
 [`digital-chip-design-agents`](https://github.com/chuanseng-ng/digital-chip-design-agents),
@@ -48,10 +48,10 @@ re-targeted to the analog/mixed-signal + RF flow.
 
 ## Install (preview)
 
-> The seven Phase 1–2 domains (circuit, simulation, infrastructure, meta,
-> architecture, modeling, ams-verification) are fully implemented. The remaining
-> Phase 3–6 domains are skeletons until their phase lands; installing them now gives
-> you the structure and planned scope, not yet the full flow logic.
+> The eleven Phase 1–3 domains (circuit, simulation, infrastructure, meta, architecture,
+> modeling, ams-verification, layout, physical-verification, extraction, post-layout) are
+> fully implemented. The remaining Phase 4–6 domains are skeletons until their phase lands;
+> installing them now gives you the structure and planned scope, not yet the full flow logic.
 
 ```text
 /plugin marketplace add github:chuanseng-ng/analog-chip-design-agents
