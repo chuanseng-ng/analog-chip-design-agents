@@ -210,8 +210,9 @@ See [`plugins/meta/skills/pipeline-orchestration/SKILL.md`](../../../meta/skills
 
 **Required at entry (`ams_testbench`) — hard-fail if missing:**
 - `constraints.supply.vdd_v` — for supply-relative connect-module thresholds
-- a DUT to verify — at least one of `design_state.circuit.netlist` or `design_state.modeling`
-  present (else `spec_gap`)
+- a runnable DUT to verify — `design_state.circuit.netlist`, or a usable model artifact
+  (`design_state.modeling.model_source` or `design_state.modeling.osdi`); a bare
+  `design_state.modeling` object with no artifact does not qualify (else `spec_gap`)
 
 **Optional (schema defaults apply when absent):**
 - functional-coverage target (default 95%)

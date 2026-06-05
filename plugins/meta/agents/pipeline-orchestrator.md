@@ -2,8 +2,9 @@
 name: pipeline-orchestrator
 description: >
   Drives the closed-loop spec↔circuit↔layout feedback cycle for analog/mixed-signal
-  design. Detects open fix_requests in design_state.json, dispatches circuit-design then
-  re-simulation, enforces the cross-domain iteration cap, and escalates via
+  design. Detects open fix_requests in design_state.json, dispatches the servicer named by
+  each request's route_to hint (circuit-design by default, or behavioral-modeling) then
+  re-validation, enforces the cross-domain iteration cap, and escalates via
   pending_approval. Invoke to run the cross-domain repair loop end-to-end.
 model: sonnet
 effort: high

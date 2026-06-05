@@ -25,9 +25,10 @@ allowed-tools: Read, Write, Bash
 
 This skill provides the closed-loop feedback protocol for analog design. When a spec
 violation, non-convergence, or yield miss is found during simulation, post-layout
-sign-off, or AMS verification, it must be communicated to the circuit-design
-orchestrator in a machine-actionable way, and the pipeline must iterate until the spec
-is met or the iteration cap is reached.
+sign-off, or AMS verification, it must be communicated to the selected servicer (via the
+fix_request `route_to` hint — `circuit-design` by default, or `behavioral-modeling`) in a
+machine-actionable way, and the pipeline must iterate until the spec is met or the
+iteration cap is reached.
 
 The protocol has three participants:
 
@@ -51,7 +52,7 @@ All entries in `design_state.fix_requests[]` must conform to this schema:
   "created_by": "circuit-simulation-orchestrator | post-layout-signoff-orchestrator | ams-verification-orchestrator",
   "failure_class": "spec_violation | convergence | functional | yield",
   "retry_strategy": "refine",
-  "route_to": "circuit-design | behavioral-modeling",
+  "route_to": "circuit-design | behavioral-modeling   (optional; omit for default circuit-design)",
   "analysis_name": "<analysis or testbench name, e.g. ac_stability, tran_settling>",
   "spec_or_metric": "<violated spec key, e.g. phase_margin_deg, nf_db, or null>",
   "corner": "<failing corner, e.g. ss_125C_vmin, or null>",
