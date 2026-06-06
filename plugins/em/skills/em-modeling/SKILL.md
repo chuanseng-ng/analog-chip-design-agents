@@ -3,9 +3,10 @@ name: em-modeling
 description: >
   Solve the electromagnetics of an on-chip passive or antenna (inductor, transformer, transmission
   line, balun, antenna), extract a converged passive S-parameter model, and fit a lumped equivalent
-  for circuit-level RF simulation. Use when building or re-solving the passive model rf-design
-  consumes. Loop-backs are stage-local (passivity/fit → meshing/geometry_definition); passivity is
-  a hard gate; a fundamental geometry/stackup gap escalates (no cross-domain fix_request).
+  for circuit-level RF simulation. Use when building the passive model rf-design consumes, or to
+  service an rf-design fix_request (route_to: em-modeling) by re-solving the passive. Loop-backs are
+  stage-local (passivity/fit → meshing/geometry_definition); passivity is a hard gate; a fundamental
+  geometry/stackup gap escalates.
 version: 1.0.0
 author: chuanseng-ng
 license: MIT
@@ -19,9 +20,9 @@ allowed-tools: Read, Write, Bash
 - **If invoked by a user** presenting an EM-modeling task: immediately spawn the
   `analog-chip-design-agents:em-modeling-orchestrator` agent and pass the full user request and any
   available context. Do not execute stages directly.
-- **If invoked by the `em-modeling-orchestrator` mid-flow** (including re-solves): do not spawn a
-  new agent. Treat this file as read-only — return the requested stage rules, sign-off criteria, or
-  loop-back guidance.
+- **If invoked by the `em-modeling-orchestrator` mid-flow** (including fix_request re-solves): do not
+  spawn a new agent. Treat this file as read-only — return the requested stage rules, sign-off
+  criteria, or loop-back guidance.
 
 Spawning the orchestrator from within an active orchestrator run causes recursive delegation and
 must never happen.
@@ -38,15 +39,14 @@ Before executing or advising on **any** stage, read the following if they exist:
 
 Solve the electromagnetics of an on-chip passive or antenna, extract a converged, passive
 S-parameter model, and fit a lumped equivalent for circuit-level RF simulation. Seven stages with
-explicit QoR gates. EM modeling is a **terminal/branch producer of a data dependency**: it writes a
-Touchstone S-parameter model + fitted lumped model into `design_state.em` that `rf-design` reads as
-a fixed passive input. Its loop-backs are stage-local (passivity/fit fail → `meshing` /
-`geometry_definition`, max 2×); it does **not** open cross-domain `fix_request`s — a fundamental
-geometry/stack-up gap escalates to the user.
-
-> **Cross-domain integration (deferred):** automating an em↔rf re-solve loop via the meta
-> `fix_request` protocol is a potential future enhancement tracked in
-> [`FUTURE_WORK.md`](../../../../FUTURE_WORK.md). It is intentionally **not** implemented here.
+explicit QoR gates. EM modeling is a **data-dependency producer and a cross-domain servicer**: it
+writes a Touchstone S-parameter model + fitted lumped model into `design_state.em` that `rf-design`
+reads as a passive input. Its loop-backs are stage-local (passivity/fit fail → `meshing` /
+`geometry_definition`, max 2×); a fundamental geometry/stack-up gap escalates to the user. EM
+modeling does **not** open `fix_request`s, but it **services** rf-design-raised ones
+(`route_to: em-modeling`): when dispatched with a `fix_request.id` it re-solves the passive toward a
+higher-Q / higher-SRF target and closes the entry with a `circuit_response` so the
+pipeline-orchestrator re-validates RF.
 
 ---
 
@@ -241,12 +241,14 @@ geometry/stack-up gap escalates to the user.
 ### Domain Rules
 1. Confirm passivity, convergence, fit accuracy, and physical sanity all pass.
 2. Publish the Touchstone + fitted lumped model into `design_state.em` for `rf-design` to consume.
-3. Close any serviced re-solve as PASS.
+3. In fix-servicing mode, close the serviced `fix_request` (`status: fixed`) with a
+   `circuit_response` and report PASS so the pipeline-orchestrator re-validates RF.
 
-### Failure Escalation
+### Failure Handling
 - Passivity / fit fail after the retry cap → escalate to the user with the failing
-  frequency/metric and a recommendation (re-mesh, change the geometry, or relax the band) — do
-  **not** open a cross-domain fix_request.
+  frequency/metric and a recommendation (re-mesh, change the geometry, or relax the band). EM
+  modeling does not *open* `fix_request`s; in fix-servicing mode leave the entry `claimed` on an
+  unresolved re-solve.
 
 ### Output Required
 - EM sign-off report (passivity, convergence, fit accuracy, physical sanity)

@@ -4,8 +4,9 @@ description: >
   Design and verify an RF/mmWave block (LNA, mixer, VCO, PLL, PA): topology selection and
   matching, S-parameter, harmonic-balance, Pnoise/PAC, IP3, and load-pull analyses, signed off
   against the RF spec table across corners. Use when designing or re-running an RF block. Loop-backs
-  are stage-local (spec/stability → topology_matching, convergence → harmonic_balance); RF reads the
-  EM-modeling passive model as a data dependency and escalates (no cross-domain fix_request).
+  are stage-local first (spec/stability → topology_matching, convergence → harmonic_balance); when a
+  cap is exhausted RF opens a cross-domain fix_request (circuit-design for device rework, em-modeling
+  for a passive shortfall) and reads the EM-modeling passive model as a data dependency.
 version: 1.0.0
 author: chuanseng-ng
 license: MIT
@@ -19,9 +20,9 @@ allowed-tools: Read, Write, Bash
 - **If invoked by a user** presenting an RF design task: immediately spawn the
   `analog-chip-design-agents:rf-design-orchestrator` agent and pass the full user request and any
   available context. Do not execute stages directly.
-- **If invoked by the `rf-design-orchestrator` mid-flow** (including re-runs after an EM re-solve):
-  do not spawn a new agent. Treat this file as read-only — return the requested stage rules,
-  sign-off criteria, or loop-back guidance.
+- **If invoked by the `rf-design-orchestrator` mid-flow** (including re-validation after a serviced
+  fix_request): do not spawn a new agent. Treat this file as read-only — return the requested stage
+  rules, sign-off criteria, or loop-back guidance.
 
 Spawning the orchestrator from within an active orchestrator run causes recursive delegation and
 must never happen.
@@ -38,18 +39,14 @@ Before executing or advising on **any** stage, read the following if they exist:
 
 Design and verify an RF/mmWave block — select and match the topology, extract S-parameters, run
 harmonic-balance / Pnoise / IP3 / load-pull, and sign off against the RF spec table across the
-required corners. Seven stages with explicit QoR gates. RF design is a **terminal/branch
-consumer** — its loop-backs are stage-local (spec/stability fail → `topology_matching`;
-non-convergence → `harmonic_balance` settings); it does **not** open cross-domain `fix_request`s.
-It **reads** the EM-modeling passive model (Touchstone + fitted lumped model) from
-`design_state.em` as a fixed data dependency; if a passive is found to be the limiter, RF
-escalates to the user **recommending an em-modeling re-solve** rather than opening an automated
-fix_request.
-
-> **Cross-domain integration (deferred):** wiring RF into the meta `fix_request` loop — so RF spec
-> misses auto-route to `circuit-design` and em↔rf re-solves become automated fix_requests — is a
-> potential future enhancement tracked in [`FUTURE_WORK.md`](../../../../FUTURE_WORK.md). It is
-> intentionally **not** implemented here.
+required corners. Seven stages with explicit QoR gates. RF design is a **cross-domain producer** —
+its loop-backs are stage-local first (spec/stability fail → `topology_matching`; non-convergence →
+`harmonic_balance` settings); when a stage-local cap is exhausted and the block still misses spec it
+**opens** a cross-domain `fix_request`. It **reads** the EM-modeling passive model (Touchstone +
+fitted lumped model) from `design_state.em` as a data dependency; a limiter traced to a passive
+opens a `fix_request` with `route_to: em-modeling` (an automated EM re-solve), while a device-level
+spec miss opens one with `route_to: circuit-design`. The pipeline-orchestrator re-validates the fix
+via this orchestrator.
 
 ---
 
@@ -121,7 +118,7 @@ fix_request.
 ### Common Issues & Fixes
 | Issue | Fix |
 |-------|-----|
-| Match operating above a passive's SRF | re-select / re-match below SRF; if no on-chip option exists, escalate recommending an em re-solve |
+| Match operating above a passive's SRF | re-select / re-match below SRF; if no on-chip option exists, open fix_request → em-modeling for a re-solve |
 | Cannot hit `s11_db_max` with the chosen topology | re-top (loop-back target) — add a matching section or change topology class |
 
 ### Output Required
@@ -193,7 +190,7 @@ fix_request.
 2. Compare each extracted metric to its `rf_specs` target; a spec miss is the second **loop-back
    trigger** to `topology_matching` (max 2×).
 3. If the noise/linearity limiter traces to an on-chip passive's loss/Q (from `design_state.em`),
-   do not loop locally — escalate recommending an em re-solve.
+   do not loop locally — open a fix_request → em-modeling for an automated re-solve.
 
 ### QoR Metrics to Evaluate
 - `nf_db` ≤ target
@@ -203,7 +200,7 @@ fix_request.
 ### Common Issues & Fixes
 | Issue | Fix |
 |-------|-----|
-| `nf_db` over target, limiter = inductor Q | escalate recommending an em re-solve (higher-Q passive) — no local fix |
+| `nf_db` over target, limiter = inductor Q | open fix_request → em-modeling (higher-Q passive) — no local fix |
 | `iip3_dbm` / phase-noise miss from the circuit | loop back → topology_matching: re-bias / re-top (max 2×) |
 
 ### Output Required
@@ -220,7 +217,7 @@ fix_request.
    for non-PA blocks, confirm the optimum source/load and compute `evm_pct` if specified, else
    pass through.
 2. Confirm the load-pull optimum is realizable with the available (EM-modeled) output match; if it
-   demands a passive beyond Q/SRF, escalate recommending an em re-solve.
+   demands a passive beyond Q/SRF, open a fix_request → em-modeling for a re-solve.
 3. A `pae_pct`/`evm_pct` miss loops back to `topology_matching` (max 2×).
 
 ### QoR Metrics to Evaluate
@@ -230,7 +227,7 @@ fix_request.
 ### Common Issues & Fixes
 | Issue | Fix |
 |-------|-----|
-| Optimum load needs a passive beyond Q/SRF | escalate recommending an em re-solve of the output passive |
+| Optimum load needs a passive beyond Q/SRF | open fix_request → em-modeling to re-solve the output passive |
 | `pae_pct`/`evm_pct` miss with a realizable load | loop back → topology_matching: re-size the output stage / re-match (max 2×) |
 
 ### Output Required
@@ -252,12 +249,15 @@ fix_request.
 1. Confirm spec compliance, stability, convergence, and passive validity all pass.
 2. Mark the block signed off and publish the RF spec-compliance table + Touchstone/HB/Pnoise
    reports.
-3. Close any serviced re-run (after a user-routed em re-solve) as PASS.
+3. Close any serviced re-validation (after a circuit-design rework or em-modeling re-solve) as PASS.
 
-### Failure Escalation
-- Spec/stability fail after the retry cap → escalate to the user with the failing spec/corner and
-  a recommendation (do **not** open a cross-domain fix_request). If the limiter is an EM passive,
-  the escalation explicitly recommends an em-modeling re-solve.
+### Failure Handling
+- Spec/stability fail after the stage-local retry cap → open a cross-domain `fix_request`
+  (`route_to: circuit-design` for a device-level miss, or `route_to: em-modeling` when the limiter
+  is an on-chip passive); terminate with `decision: escalate` so the pipeline-orchestrator dispatches
+  the servicer and re-validates via this orchestrator.
+- Escalate to the user only for a genuine `spec_gap` (ambiguous/missing spec) or when the
+  cross-domain iteration cap is hit.
 
 ### Output Required
 - RF sign-off report (spec compliance, stability, convergence, passive validity)

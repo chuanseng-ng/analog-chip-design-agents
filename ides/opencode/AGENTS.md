@@ -70,7 +70,7 @@ Canonical knowledge: [`plugins/circuit/skills/circuit-design/SKILL.md`](../../pl
 
 ### em-modeling
 
-Solve the electromagnetics of an on-chip passive or antenna (inductor, transformer, transmission line, balun, antenna), extract a converged passive S-parameter model, and fit a lumped equivalent for circuit-level RF simulation. Use when building or re-solving the passive model rf-design consumes. Loop-backs are stage-local (passivity/fit → meshing/geometry_definition); passivity is a hard gate; a fundamental geometry/stackup gap escalates (no cross-domain fix_request).
+Solve the electromagnetics of an on-chip passive or antenna (inductor, transformer, transmission line, balun, antenna), extract a converged passive S-parameter model, and fit a lumped equivalent for circuit-level RF simulation. Use when building the passive model rf-design consumes, or to service an rf-design fix_request (route_to: em-modeling) by re-solving the passive. Loop-backs are stage-local (passivity/fit → meshing/geometry_definition); passivity is a hard gate; a fundamental geometry/stackup gap escalates.
 
 **Stages:** `em_setup → geometry_definition → meshing → em_solve → sparameter_extraction → model_fitting → em_signoff`
 
@@ -150,7 +150,7 @@ Canonical knowledge: [`plugins/reliability/skills/reliability/SKILL.md`](../../p
 
 ### rf-design
 
-Design and verify an RF/mmWave block (LNA, mixer, VCO, PLL, PA): topology selection and matching, S-parameter, harmonic-balance, Pnoise/PAC, IP3, and load-pull analyses, signed off against the RF spec table across corners. Use when designing or re-running an RF block. Loop-backs are stage-local (spec/stability → topology_matching, convergence → harmonic_balance); RF reads the EM-modeling passive model as a data dependency and escalates (no cross-domain fix_request).
+Design and verify an RF/mmWave block (LNA, mixer, VCO, PLL, PA): topology selection and matching, S-parameter, harmonic-balance, Pnoise/PAC, IP3, and load-pull analyses, signed off against the RF spec table across corners. Use when designing or re-running an RF block. Loop-backs are stage-local first (spec/stability → topology_matching, convergence → harmonic_balance); when a cap is exhausted RF opens a cross-domain fix_request (circuit-design for device rework, em-modeling for a passive shortfall) and reads the EM-modeling passive model as a data dependency.
 
 **Stages:** `rf_spec → topology_matching → sparameter_analysis → harmonic_balance → noise_linearity → loadpull_optimization → rf_signoff`
 

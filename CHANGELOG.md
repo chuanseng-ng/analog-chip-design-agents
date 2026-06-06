@@ -1,5 +1,42 @@
 # Changelog
 
+## [Unreleased] — Phase 7: RF/EM cross-domain integration
+
+### Added
+
+- **RF wired into the meta cross-domain `fix_request` loop.** `rf-design` is no longer a
+  terminal/branch consumer — it is now a cross-domain **producer**. After its stage-local caps
+  (`topology_matching` for a spec/stability miss, `harmonic_balance` for non-convergence) are
+  exhausted and the block still misses spec, the `rf-design-orchestrator` **opens** a `fix_request`
+  (`created_by: rf-design-orchestrator`, `failure_class: spec_violation`, `retry_strategy: refine`)
+  routed to `circuit-design` (device-level rework) or `em-modeling` (an on-chip passive is the
+  limiter — low Q / under-spec SRF). User escalation is now reserved for a genuine `spec_gap` or a
+  cross-domain-cap hit.
+- **`em-modeling` as a cross-domain servicer.** `em-modeling` now **services** rf-design-raised
+  `fix_request`s (`route_to: em-modeling`): claims the entry (`open→claimed`), re-solves the passive
+  toward a higher-Q / higher-SRF target, republishes the `em` block (Touchstone + fitted lumped
+  model), and closes it (`status: fixed`) with a `circuit_response` (`files_changed` = the
+  republished Touchstone / fitted-model artifacts). It still never *opens* a `fix_request` itself.
+- **Meta wiring.** `plugins/meta` (pipeline-orchestration skill + pipeline-orchestrator agent) add
+  `rf-design-orchestrator` to the `created_by` enum and `em-modeling` to the `route_to` enum; the
+  participants table, ownership rules, and dispatch pattern add em-modeling as a servicer and
+  rf-design as the re-validation target (re-validation is selected by `created_by`). Spawn forms add
+  `analog-design-em:em-modeling-orchestrator` (servicer) and `analog-design-rf:rf-design-orchestrator`
+  (re-validation).
+- **Schema + fixture.** `docs/design_state_schema.md` rewrites the RF emphasis tier from
+  "terminal/deferred" to the now-wired cross-domain routing. The CI fixture
+  `plugins/meta/skills/pipeline-orchestration/examples/design_state.fix_request.json` gains a
+  representative RF→em-modeling fix_request (NF limited by inductor Q, serviced by an EM re-solve and
+  re-validated by RF).
+
+### Notes
+
+- Reuses the existing `failure_class: spec_violation → retry_strategy: refine` mapping — no new
+  failure-class enum, so `validate.yml` (`VALID_FR_FAILURE` / `RETRY_STRATEGY_MAP`) is unchanged.
+- Closes the sole RF/EM enhancement deferred from Phase 5 (see [`FUTURE_WORK.md`](FUTURE_WORK.md)).
+  The remaining deferred items are the end-to-end validation harness and deeper tool/PDK coverage.
+- `ides/` regenerated from the updated RF/EM SKILLs via `tools/export_ides.py`.
+
 ## [Unreleased] — Phase 6: integration & polish
 
 ### Added
