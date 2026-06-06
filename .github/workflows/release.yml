@@ -58,3 +58,69 @@ jobs:
           files: |
             dist/*.tar.gz
             dist/*.zip
+
+  npm-publish:
+    name: Publish to npm
+    needs: validate
+    runs-on: ubuntu-latest
+    # Using NPM_TOKEN for the initial publish; migrate to OIDC trusted
+    # publishing (permissions.id-token: write, no token) once the package
+    # exists on npm and a trusted publisher is configured for this workflow.
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # The publish job only reads, stamps locally, and runs `npm publish` —
+          # it never pushes to git, so the GITHUB_TOKEN need not be persisted.
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          # This publish-only job disables setup-node's dependency cache; the
+          # package has no dependencies and nothing to restore.
+          package-manager-cache: false
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stamp tag version into package.json and manifests
+        env:
+          VERSION: ${{ steps.ver.outputs.tag }}
+        run: |
+          node -e "
+          const fs = require('fs');
+          const tag = process.env.VERSION.replace(/^v/, '');
+          const stamp = (p, mut) => { const d = JSON.parse(fs.readFileSync(p)); mut(d); fs.writeFileSync(p, JSON.stringify(d, null, 2) + '\n'); };
+          stamp('package.json', d => d.version = tag);
+          stamp('.claude-plugin/marketplace.json', d => d.metadata.version = tag);
+          for (const dir of fs.readdirSync('plugins')) {
+            const p = 'plugins/' + dir + '/.claude-plugin/plugin.json';
+            if (fs.existsSync(p)) stamp(p, d => d.version = tag);
+          }
+          console.log('Stamped version ' + tag);
+          "
+
+      - name: Publish to npm
+        env:
+          VERSION: ${{ steps.ver.outputs.tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Prerelease tags (rc/beta) publish under the "next" dist-tag so they
+          # never overwrite "latest".
+          TAG=latest
+          case "$VERSION" in
+            *rc*|*beta*) TAG=next ;;
+          esac
+          npm publish --access public --tag "$TAG"
