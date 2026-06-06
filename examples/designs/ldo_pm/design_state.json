@@ -1,0 +1,69 @@
+{
+  "format_version": "1.0",
+  "design_name": "example_ldo",
+  "created_at": "2026-03-10T09:00:00Z",
+  "updated_at": "2026-03-10T09:00:00Z",
+  "cross_domain_iteration_count": 0,
+  "pipeline_session_id": null,
+  "pipeline_config": {
+    "max_cross_domain_iterations": 3,
+    "checkpoints": ["tapeout_signoff"]
+  },
+  "pending_approval": null,
+  "approved_checkpoints": [],
+  "constraints": {
+    "supply": { "vdd_v": 1.8, "vss_v": 0.0 },
+    "specs": { "phase_margin_deg": 60, "dc_gain_db": 60 },
+    "pdk": "sky130"
+  },
+  "fix_requests": [
+    {
+      "id": "fr_ldo_pm_001",
+      "created_at": "2026-03-10T09:30:00Z",
+      "updated_at": "2026-03-10T09:30:00Z",
+      "created_by": "circuit-simulation-orchestrator",
+      "failure_class": "spec_violation",
+      "retry_strategy": "refine",
+      "analysis_name": "ac_stability",
+      "spec_or_metric": "phase_margin_deg",
+      "corner": "ss_125C_vmin",
+      "waveform_path": "sim/waves/ac_stability_ss_125C_vmin.raw",
+      "log_path": "sim/logs/ac_stability_ss_125C_vmin.log",
+      "suspected_circuit": {
+        "block": "error_amp",
+        "device": "M_tail / Cc",
+        "netlist": "netlist/ldo_ota.spice",
+        "schematic_ref": "sch/ldo_ota.sch"
+      },
+      "summary": "Phase margin 41 deg at SS/125C/Vmin — below 60 deg target",
+      "expected_behavior": "Phase margin >= 60 deg across all corners per spec",
+      "observed_behavior": "PM = 41 deg; non-dominant pole from output stage too close to UGF",
+      "session_id": "ps20260310_090000",
+      "status": "open",
+      "circuit_response": null,
+      "history": [
+        {
+          "timestamp": "2026-03-10T09:30:00Z",
+          "agent": "circuit-simulation-orchestrator",
+          "from_status": null,
+          "to_status": "open",
+          "note": "Spec violation found in corner_analysis stage"
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "timestamp": "2026-03-10T09:30:00Z",
+      "agent": "circuit-simulation-orchestrator",
+      "stage": "corner_analysis",
+      "decision": "escalate",
+      "confidence": "high",
+      "failure_class": "spec_violation",
+      "retry_strategy": "refine",
+      "suggested_next_step": "escalate",
+      "reason": "PM 41 deg < 60 deg target at SS/125C/Vmin — fix_request opened",
+      "constraint_ref": "specs.phase_margin_deg"
+    }
+  ]
+}

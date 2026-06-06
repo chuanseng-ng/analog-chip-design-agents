@@ -1,0 +1,18 @@
+{
+  "name": "lna_nf",
+  "description": "RF LNA noise-figure miss limited by a low-Q on-chip matching inductor. rf-design opens a fix_request with route_to: em-modeling (Phase 7 cross-domain path). em-modeling re-solves the passive to higher Q/SRF and republishes the em block; re-validation routes back to rf-design and the NF spec passes on the first cycle. No checkpoints configured.",
+  "servicer_responses": {
+    "fr_lna_nf_001": {
+      "fixed_on_iteration": 1,
+      "diff_summary": "Re-solved input matching inductor (wider top-metal turns, increased spacing): Q 8 -> 14, SRF above band; refit lumped model. NF now 2.3 dB at the failing corner.",
+      "files_changed": ["em/touchstone/L_match.s2p", "em/models/L_match_fitted.spice"]
+    }
+  },
+  "checkpoint_approvals": [],
+  "expect": {
+    "outcome": "signoff",
+    "cross_domain_iterations": 1,
+    "servicer": "em-modeling-orchestrator",
+    "revalidator": "rf-design-orchestrator"
+  }
+}

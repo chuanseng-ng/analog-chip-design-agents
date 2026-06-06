@@ -40,6 +40,11 @@ def distill():
 
 
 @pytest.fixture(scope="session")
+def run_pipeline():
+    return _load("run_pipeline", "tests/e2e/run_pipeline.py")
+
+
+@pytest.fixture(scope="session")
 def fixtures_dir() -> Path:
     return FIXTURES
 
