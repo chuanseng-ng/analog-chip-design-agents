@@ -1,5 +1,48 @@
 # Changelog
 
+## [Unreleased] — Phase 6: integration & polish
+
+### Added
+
+- **`analog-design-ams-integration` — mixed-signal top integration (implemented).** The last
+  skeleton domain is filled in. Six stages (`ip_qualification → top_assembly →
+  boundary_connect_rules → chip_level_ams_sim → power_intent_check → integration_signoff`) qualify
+  signed-off analog/RF/digital IP, assemble the mixed-signal top (netlist + IO/ESD ring + supply
+  network), define explicit top-level connect/level-shifter rules, run chip-level AMS co-sim, and
+  check power intent through a human-approval sign-off (chip tape-out gate). Full per-stage Domain
+  Rules, QoR gates, Common-Issues tables, constraint validation, and memory wiring. **Wired into
+  the meta cross-domain loop:** opens fix_requests routed to `custom-layout` (top-LVS/connectivity,
+  `failure_class: connectivity`), `circuit-design` (block functional/spec miss, `functional`/
+  `spec_violation`), or `behavioral-modeling` (connect-module/RNM divergence, `functional`); the
+  pipeline-orchestrator re-validates via the ams-integration orchestrator. Writes the new
+  `ams_integration` block (`top_netlist`, `top_lvs_errors`, `ams_sim_pass`, `connect_rule_errors`,
+  `functional_coverage_pct`, `power_intent_pass`, `esd_ring_complete`, `island_isolation_pass`).
+- **Meta wiring.** `plugins/meta` (skill + pipeline-orchestrator agent) add
+  `ams-integration-orchestrator` as a fix_request producer and a re-validation dispatch target.
+  `docs/design_state_schema.md` adds the `ams_integration` block and describes its downstream
+  cross-domain routing. `memory/ams-integration/knowledge.md` seeded with known patterns
+  (`distill.py` already registered the domain + its `top_lvs_errors`/`ams_sim_pass`/
+  `connect_rule_errors` metrics).
+- **Distribution.** `install.sh` / `install.ps1` — one-step installers that register the
+  marketplace and install every plugin read from `.claude-plugin/marketplace.json` (supports a
+  `--list` flag and an explicit plugin subset).
+- **Multi-IDE export.** `ides/` (Copilot / Gemini / OpenCode / Codex) generated from the plugin
+  SKILLs by `tools/export_ides.py` (with a `--check` mode for CI); `plugins/` stays the source of
+  truth.
+- **Tooling.** `tools/qor_trends.py` — trends analog/RF QoR metrics (`dc_gain_db`,
+  `phase_margin_deg`, `nf_db`, `power_mw`, `mc_yield_sigma`, `ir_drop_pct`, the ams-integration
+  metrics, …) across runs from the per-domain `experiences.jsonl`, with regression alerts and
+  `--group-by pdk|tool|domain`.
+- **Release CI.** `.github/workflows/release.yml` — on a `v*` tag (or manual dispatch), reuses
+  `validate.yml` as a gate, packages the marketplace (tar.gz + zip), and publishes a GitHub Release
+  with auto-generated notes.
+
+### Notes
+
+- Wiring **RF/EM** into the meta fix_request loop remains a separate deferred enhancement
+  (see [`FUTURE_WORK.md`](FUTURE_WORK.md)); only `ams-integration` gains meta wiring in this phase.
+- All 16 plugins are now fully implemented — Phase 6 completes the roadmap.
+
 ## [Unreleased] — Phase 5: RF & EM
 
 ### Added
