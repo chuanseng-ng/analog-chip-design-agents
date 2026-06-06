@@ -1,8 +1,8 @@
 """Shared pytest fixtures: import the repo's standalone tool scripts as modules.
 
-The tools (``tools/qor_trends.py``, ``tools/export_ides.py``, and the memory-keeper
-``distill.py``) are run as scripts in production, not installed as a package, so the
-tests load them by path via importlib and expose them as fixtures.
+The tools (``tools/qor_trends.py`` and the memory-keeper ``distill.py``) are run
+as scripts in production, not installed as a package, so the tests load them by
+path via importlib and expose them as fixtures.
 """
 
 from __future__ import annotations
@@ -27,11 +27,6 @@ def _load(name: str, relpath: str):
 @pytest.fixture(scope="session")
 def qor_trends():
     return _load("qor_trends", "tools/qor_trends.py")
-
-
-@pytest.fixture(scope="session")
-def export_ides():
-    return _load("export_ides", "tools/export_ides.py")
 
 
 @pytest.fixture(scope="session")

@@ -1,5 +1,46 @@
 # Changelog
 
+## [Unreleased] — feat/agent-auto-detect: detect the AI agent platform and install natively
+
+### Added
+
+- **Auto-detection of installed AI coding agents.** Running the installer with no
+  `--ide` flag now detects which of the five supported agents (Claude Code, OpenAI
+  Codex, OpenCode, Gemini, GitHub Copilot) are present, prints what it found and
+  where each would write, and installs to them after a confirmation prompt. An
+  agent counts as installed if its CLI is on `PATH` **or** its config directory
+  exists (`~/.claude`, `~/.codex`, `~/.config/opencode`, `~/.gemini`); Copilot is
+  project-scoped and detected via the `gh` / `copilot` CLI. New `bin/detect.mjs`
+  is the single source of truth for the detection signatures (mirrored natively in
+  `install.sh` / `install.ps1`).
+- **`--yes` / `-y` (sh, mjs) and `-Yes` (ps1)** to skip the confirmation prompt;
+  detection also auto-proceeds in non-interactive shells (CI, pipes).
+
+### Changed
+
+- **`bin/install.mjs` now installs all five targets natively in Node — no Python
+  dependency.** Ported from digital-chip-design-agents: the Copilot / Gemini /
+  OpenCode / Codex generators run at install time from the `plugins/` SKILLs.
+  Gemini and OpenCode embed runtime file references, so under `npx` the referenced
+  payload is copied to a durable `~/.analog-chip-design-agents/payload/<version>/`
+  so references survive package-dir reclamation. Explicit `--ide` (including
+  `all`) bypasses detection.
+- **`install.sh` / `install.ps1` rewritten to parity** with the npm installer:
+  detection-by-default, `--ide`/`-IDE` (`claude|copilot|gemini|opencode|codex|all`),
+  `--global`, `--yes`/`-y` (`-Yes`), and per-IDE native generation. They still
+  require `python3` (the Claude block reads plugin versions and merges
+  `settings.json`); the fully Python-free path is the npm installer. The previous
+  Claude-only `claude plugin install` marketplace wrapper (and its `--list` /
+  positional-plugin args) is removed.
+- **`ides/` is now install-time templates, not committed exports.** The Copilot
+  header + `applyto-map.json`, `gemini-header.md`, `opencode-base.json`, and Codex
+  header drive install-time generation. Removed `tools/export_ides.py`, its CI
+  freshness gate in `validate.yml`, its pytest suite, and the committed
+  `ides/gemini/GEMINI.md` / `ides/opencode/AGENTS.md` mirrors — `plugins/` remains
+  the single source of truth.
+- **`README.md`** documents auto-detection, the `--yes` flag, per-IDE explicit
+  install, and that the npm path installs every supported target with no Python.
+
 ## [Unreleased] — Repo quality: schema, tests & end-to-end harness
 
 ### Added
