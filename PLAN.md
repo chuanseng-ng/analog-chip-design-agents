@@ -12,9 +12,10 @@
 > characterization → RF design → EM → mixed-signal top integration, plus shared
 > infrastructure and a meta pipeline orchestrator.
 >
-> **This document is a plan only.** No plugins are scaffolded or implemented yet.
-> Review and steer the domain list, naming, and roadmap below before bulk work
-> begins.
+> **Status: fully delivered.** All 16 plugins and Phases 0–7 described below are
+> implemented — see [`CHANGELOG.md`](CHANGELOG.md). This document is retained as
+> the design rationale and roadmap reference; the §13 decisions are resolved and
+> the remaining deferred enhancements are tracked in [`FUTURE_WORK.md`](FUTURE_WORK.md).
 
 ---
 
@@ -58,7 +59,7 @@ synthesis/STA/ATPG.
 
 ---
 
-## 2. Naming & branding decisions (please confirm in §13)
+## 2. Naming & branding decisions
 
 - **Marketplace name:** `analog-chip-design-agents` (matches repo name).
 - **Plugin prefix:** `analog-design-<domain>` — e.g. `analog-design-circuit`,
@@ -388,7 +389,9 @@ analog-chip-design-agents/
 
 ## 12. Phased implementation roadmap
 
-Recommended build order — each phase is independently shippable and CI-validated.
+**All phases below are delivered** (see [`CHANGELOG.md`](CHANGELOG.md)); this is
+the build order that was followed — each phase was independently shippable and
+CI-validated.
 
 - **Phase 0 — Skeleton & conventions:** `marketplace.json`, root README/CONTRIBUTING/
   LICENSE (MIT, matching reference), `.github/workflows/validate.yml`, plugin.json
@@ -412,23 +415,25 @@ Recommended build order — each phase is independently shippable and CI-validat
 
 ---
 
-## 13. Open questions / assumptions to confirm before scaffolding
+## 13. Decisions (resolved)
 
-1. **Plugin prefix** — proceed with `analog-design-<domain>`? (Alt: `analog-chip-<domain>`
-   to hew closer to the digital `chip-design-` prefix.)
-2. **Post-layout plugin** — keep `post-layout-signoff` as a standalone 16th plugin,
-   or fold it into `circuit-simulation` for a leaner 15-plugin set?
-3. **Default open PDK** — confirm `sky130` primary, with `gf180mcu` + `ihp-sg13g2`
-   (RF/SiGe) secondary. Any proprietary PDK that must be first-class (detect-only)?
-4. **RF granularity** — is one `rf-design` + one `em-modeling` plugin enough, or do
-   you want RF split further (e.g. separate PLL/VCO vs PA/LNA, or a dedicated
-   `package/SI-PI` domain)?
-5. **Behavioral-modeling language priority** — rank Verilog-A/AMS vs SystemVerilog
-   real-number modeling vs VHDL-AMS for the first implementation pass.
-6. **License & metadata** — confirm MIT and the same `author/homepage/repository`
-   convention as the reference (`chuanseng-ng`).
-7. **IDE export targets** — keep all four (Copilot/Gemini/OpenCode/Codex), or a
-   subset, in Phase 6?
+The questions raised before scaffolding have all been resolved and reflected in
+the shipped repo:
+
+1. **Plugin prefix** — `analog-design-<domain>` (disambiguates from the digital
+   `chip-design-` marketplace so both install side-by-side).
+2. **Post-layout plugin** — kept as a standalone plugin; the catalogue is 16
+   plugins (14 domains + infrastructure + meta).
+3. **Default open PDKs** — `sky130` primary, `gf180mcu` + `ihp-sg13g2` (RF/SiGe)
+   secondary; proprietary PDKs are detect-only.
+4. **RF granularity** — one `rf-design` + one `em-modeling` plugin; RF is not
+   split further.
+5. **Behavioral-modeling languages** — Verilog-A/AMS (OpenVAF/OSDI) first, with
+   SystemVerilog RNM and VHDL-AMS also covered in the `behavioral-modeling` skill.
+6. **License & metadata** — MIT, with the `chuanseng-ng`
+   `author`/`homepage`/`repository` convention across every `plugin.json`.
+7. **IDE export targets** — all four kept (Copilot / Gemini / OpenCode / Codex),
+   generated under `ides/` by `tools/export_ides.py`.
 
 ---
 
@@ -451,7 +456,8 @@ Recommended build order — each phase is independently shippable and CI-validat
 
 ---
 
-*Generated as a planning artifact. Mirrors the structure, conventions, and
-file formats of `digital-chip-design-agents` while re-targeting every domain to
-the analog/mixed-signal + RF design flow. No plugins implemented yet — see §13 for
-decisions needed before scaffolding.*
+*Mirrors the structure, conventions, and file formats of
+`digital-chip-design-agents`, re-targeting every domain to the analog/mixed-signal
++ RF design flow. All 16 plugins and Phases 0–7 are implemented — see
+[`CHANGELOG.md`](CHANGELOG.md) for delivery history and
+[`FUTURE_WORK.md`](FUTURE_WORK.md) for deferred enhancements.*

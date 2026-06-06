@@ -1,81 +1,47 @@
 # Future Work
 
-Deferred enhancements and planned work for `analog-chip-design-agents`. Items here are
-intentionally **not** implemented yet; each notes the trade-off and the trigger for adopting it.
+Deferred enhancements for `analog-chip-design-agents`. Items here are intentionally
+**not** fully implemented yet; each notes the trade-off and the trigger for adopting it.
 
----
-
-## Cross-domain RF/EM integration (completed in Phase 7)
-
-**Status:** ✅ implemented in Phase 7 — see the [`CHANGELOG.md`](CHANGELOG.md) Phase 7 entry. This
-was the "Option 2" deferred enhancement. `rf-design` is now a cross-domain **producer**: after its
-stage-local caps (`topology_matching` / `harmonic_balance`) are exhausted it opens a `fix_request`
-routed to `circuit-design` (device-level spec miss) or `em-modeling` (passive shortfall — automated
-EM re-solve), instead of escalating to the user. `em-modeling` is the **servicer** for those passive
-re-solves, and the pipeline-orchestrator re-validates via `rf-design` (`created_by` →
-`rf-design-orchestrator`). The meta `created_by` (adds `rf-design-orchestrator`) and `route_to`
-(adds `em-modeling`) enums, the dispatch/participants wiring, and the CI fix_request fixture were all
-updated. User escalation is now reserved for a genuine `spec_gap` or a cross-domain-cap hit.
-
----
-
-## End-to-end validation harness (implemented)
-
-**Status:** ✅ implemented. A dependency-free replica of the meta dispatch rules,
-[`tests/e2e/run_pipeline.py`](tests/e2e/run_pipeline.py), drives `design_state.json` through the
-open → claimed → fixed lifecycle and asserts the closed-loop behaviour against two committed
-reference designs ([`examples/designs/ldo_pm`](examples/designs/ldo_pm) — default route to
-circuit-design with a tapeout checkpoint, and [`examples/designs/lna_nf`](examples/designs/lna_nf)
-— the Phase 7 RF→em-modeling passive re-solve). `tests/test_e2e.py` covers servicer/revalidator
-routing, the iteration cap escalation on a non-converging variant, the checkpoint gate, intake halt
-on a pre-existing `pending_approval`, and schema-validity of every emitted state. It runs in the
-`tests` CI job (pytest).
-
-### Possible follow-ups (still open)
-The harness models the dispatch rules, not the LLM orchestrators themselves. A heavier future step
-would stub or invoke the real domain orchestrators end-to-end; the items below (real tool/PDK
-execution) are the natural place that effort would land.
+> **Recently completed** (now part of the shipped repo — see [`CHANGELOG.md`](CHANGELOG.md)
+> for details, not re-narrated here): the **Phase 7 RF/EM cross-domain `fix_request`
+> loop** (`rf-design` producer → `circuit-design` / `em-modeling` servicer →
+> `rf-design` re-validation), the **end-to-end validation harness**
+> ([`tests/e2e/run_pipeline.py`](tests/e2e/run_pipeline.py) + [`tests/test_e2e.py`](tests/test_e2e.py)
+> over the `ldo_pm` / `lna_nf` reference designs), and all of **Phase 6**
+> (`ams-integration`, `ides/` export, installers, `qor_trends.py`, release workflow).
 
 ---
 
 ## Deeper tool / PDK coverage (partially implemented)
 
-**Status:** in progress. The coverage boundary is now documented in
-[`docs/pdk_support.md`](docs/pdk_support.md), and the **ngspice** path is exercised for real: a
-PDK-independent deck (`examples/designs/ldo_pm/smoke/divider.sp`) runs through
-`plugins/infrastructure/tools/wrap-ngspice.sh` in `tests/test_tool_smoke.py` (skipped where the
-binary is absent, so CI stays green). All other tools remain **detect-only** and the validated open
-PDK set is still `sky130` / `gf180mcu` / `ihp-sg13g2`.
+**Status:** in progress. The coverage boundary is documented in
+[`docs/pdk_support.md`](docs/pdk_support.md), and the **ngspice** path is exercised for
+real: a PDK-independent deck (`examples/designs/ldo_pm/smoke/divider.sp`) runs through
+`plugins/infrastructure/tools/wrap-ngspice.sh` in `tests/test_tool_smoke.py` (skipped where
+the binary is absent, so CI stays green). All other tools remain **detect-only** and the
+validated open PDK set is still `sky130` / `gf180mcu` / `ihp-sg13g2`.
 
 ### The remaining work
-Promote more wrappers from *detect-only* to *smoke* (Xyce, Magic, KLayout, Netgen, OpenVAF, openEMS),
-drive at least one full open-source flow in-loop, and add/validate additional open PDKs beyond the
-current three. The "Adding coverage" recipe in `docs/pdk_support.md` is the entry point.
+Promote more wrappers from *detect-only* to *smoke* (Xyce, Magic, KLayout, Netgen, OpenVAF,
+openEMS), drive at least one full open-source flow in-loop, and add/validate additional open
+PDKs beyond the current three. The "Adding coverage" recipe in `docs/pdk_support.md` is the
+entry point.
 
 ### Trade-offs
-- **For:** moves the marketplace from "knows the flow" toward "runs the flow" on open tooling; lets
-  a real silicon run close in-loop.
+- **For:** moves the marketplace from "knows the flow" toward "runs the flow" on open tooling;
+  lets a real silicon run close in-loop.
 - **Against:** heavy environment/tooling dependencies and PDK-specific quirks; CI cost and
   flakiness risk if real tools are invoked in the pipeline.
 
 ### Trigger for adopting it
-Pick this up when a real design needs a specific open tool/PDK closed in-loop, or when there is
-appetite to maintain tool-execution CI alongside the spec validation.
+Pick this up when a real design needs a specific open tool/PDK closed in-loop, or when there
+is appetite to maintain tool-execution CI alongside the spec validation.
 
 ---
 
-## Phase 6 (complete)
+## Real-orchestrator end-to-end (open)
 
-Phase 6 is implemented — see the [`CHANGELOG.md`](CHANGELOG.md) Phase 6 entry:
-
-- **`analog-design-ams-integration`** — the last skeleton domain is fully implemented (mixed-signal
-  top assembly, boundary/connect rules, chip-level AMS sim, power intent) and wired into the meta
-  cross-domain fix_request loop.
-- **`ides/` multi-assistant export** (Copilot / Gemini / OpenCode / Codex, generated by
-  `tools/export_ides.py`), `install.sh` / `install.ps1`, `tools/qor_trends.py`, and
-  `.github/workflows/release.yml` — all delivered per `PLAN.md` §12 Phase 6.
-
-The RF/EM cross-domain integration that was deferred here is now **complete** (Phase 7), and the
-**end-to-end validation harness** is now implemented (see above). **Deeper tool / PDK coverage** is
-now partially implemented (ngspice smoke path + coverage matrix); broadening it to more tools/PDKs
-and a full in-loop flow is the remaining open enhancement.
+The current end-to-end harness models the meta **dispatch rules**, not the LLM orchestrators
+themselves. A heavier future step would stub or invoke the real domain orchestrators end-to-end;
+the deeper tool/PDK execution above is the natural place that effort would land.
