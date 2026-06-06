@@ -68,11 +68,13 @@ jobs:
     name: Publish to npm
     needs: validate
     runs-on: ubuntu-latest
-    # Using NPM_TOKEN for the initial publish; migrate to OIDC trusted
-    # publishing (permissions.id-token: write, no token) once the package
-    # exists on npm and a trusted publisher is configured for this workflow.
+    # Publishes via npm OIDC trusted publishing — no NPM_TOKEN. The runner mints
+    # a short-lived OIDC token (id-token: write) that npm exchanges for per-run
+    # credentials, and provenance attestations are generated automatically. This
+    # requires a trusted publisher configured for this repo/workflow on npmjs.com.
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Checkout
@@ -87,6 +89,10 @@ jobs:
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Ensure npm supports OIDC trusted publishing
+        # OIDC trusted publishing needs npm >= 11.5.1; Node 24 bundles an older npm.
+        run: npm install -g npm@latest
 
       - name: Resolve version
         id: ver
@@ -122,7 +128,6 @@ jobs:
       - name: Publish to npm
         env:
           VERSION: ${{ steps.ver.outputs.tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           # Prerelease tags (rc/beta) publish under the "next" dist-tag so they
           # never overwrite "latest".
