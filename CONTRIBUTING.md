@@ -1,6 +1,6 @@
 # Contributing to analog-chip-design-agents
 
-All 16 plugins are implemented — the phased build in [`PLAN.md` §12](PLAN.md) is
+All 16 plugins are implemented — the phased build in [`PLAN.md` §12](docs/PLAN.md) is
 complete. Contributions now extend existing domains (new stage rules, QoR metrics,
 loop-backs) or broaden tool/PDK coverage. Follow the standards below so CI
 (`validate.yml`) stays green.

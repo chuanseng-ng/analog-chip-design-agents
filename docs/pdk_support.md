@@ -22,7 +22,7 @@ This page tracks how far each PDK and EDA tool is exercised by the marketplace, 
 
 "Validated" here means the PDK name is wired consistently through the SKILL `Supported Tools`
 sections and the `constraints.pdk` field. None of the three is exercised by a real tape-out flow
-in CI yet (see [`FUTURE_WORK.md`](../FUTURE_WORK.md) → *Deeper tool / PDK coverage*).
+in CI yet (see [`FUTURE_WORK.md`](FUTURE_WORK.md) → *Deeper tool / PDK coverage*).
 
 ## Open-source tools
 

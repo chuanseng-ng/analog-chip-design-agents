@@ -49,7 +49,7 @@ LOWER_IS_BETTER = {
     "rnm_mismatch_count", "regression_failures", "failing_corners", "coupling_caps",
 }
 
-# Headline metrics surfaced first (PLAN.md §10), when present in the data.
+# Headline metrics surfaced first (docs/PLAN.md §10), when present in the data.
 HEADLINE = [
     "dc_gain_db", "phase_margin_deg", "worst_pm_deg", "input_noise", "power_mw",
     "nf_db", "gain_db", "iip3_dbm", "mc_yield_sigma", "area_um2", "em_margin",

@@ -49,7 +49,7 @@ jobs:
           # Ship the installable surface: the registry, every plugin, shared docs,
           # the installers, and the helper tools.
           cp -r .claude-plugin plugins docs tools install.sh install.ps1 \
-                README.md LICENSE CHANGELOG.md "dist/${pkg}/"
+                README.md LICENSE "dist/${pkg}/"
           tar -czf "dist/${pkg}.tar.gz" -C dist "${pkg}"
           (cd dist && zip -rq "${pkg}.zip" "${pkg}")
           ls -la dist

@@ -7,7 +7,7 @@ Deferred enhancements for `analog-chip-design-agents`. Items here are intentiona
 > for details, not re-narrated here): the **Phase 7 RF/EM cross-domain `fix_request`
 > loop** (`rf-design` producer → `circuit-design` / `em-modeling` servicer →
 > `rf-design` re-validation), the **end-to-end validation harness**
-> ([`tests/e2e/run_pipeline.py`](tests/e2e/run_pipeline.py) + [`tests/test_e2e.py`](tests/test_e2e.py)
+> ([`tests/e2e/run_pipeline.py`](../tests/e2e/run_pipeline.py) + [`tests/test_e2e.py`](../tests/test_e2e.py)
 > over the `ldo_pm` / `lna_nf` reference designs), and all of **Phase 6**
 > (`ams-integration`, `ides/` export, installers, `qor_trends.py`, release workflow).
 
@@ -16,7 +16,7 @@ Deferred enhancements for `analog-chip-design-agents`. Items here are intentiona
 ## Deeper tool / PDK coverage (partially implemented)
 
 **Status:** in progress. The coverage boundary is documented in
-[`docs/pdk_support.md`](docs/pdk_support.md), and the **ngspice** path is exercised for
+[`pdk_support.md`](pdk_support.md), and the **ngspice** path is exercised for
 real: a PDK-independent deck (`examples/designs/ldo_pm/smoke/divider.sp`) runs through
 `plugins/infrastructure/tools/wrap-ngspice.sh` in `tests/test_tool_smoke.py` (skipped where
 the binary is absent, so CI stays green). All other tools remain **detect-only** and the
@@ -25,7 +25,7 @@ validated open PDK set is still `sky130` / `gf180mcu` / `ihp-sg13g2`.
 ### The remaining work
 Promote more wrappers from *detect-only* to *smoke* (Xyce, Magic, KLayout, Netgen, OpenVAF,
 openEMS), drive at least one full open-source flow in-loop, and add/validate additional open
-PDKs beyond the current three. The "Adding coverage" recipe in `docs/pdk_support.md` is the
+PDKs beyond the current three. The "Adding coverage" recipe in `pdk_support.md` is the
 entry point.
 
 ### Trade-offs

@@ -381,8 +381,9 @@ analog-chip-design-agents/
 ├── tools/qor_trends.py
 ├── install.sh / install.ps1
 ├── .github/workflows/     {validate.yml, release.yml}
-├── README.md  CONTRIBUTING.md  CHANGELOG.md  FUTURE_WORK.md  LICENSE
-└── PLAN.md  (this file)
+├── docs/                   {installation.md, architecture.md, design_state_schema.md, pdk_support.md, templates/,
+│                            PLAN.md (this file), CHANGELOG.md, FUTURE_WORK.md}
+└── README.md  CONTRIBUTING.md  LICENSE
 ```
 
 ---

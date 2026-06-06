@@ -5,7 +5,7 @@
     "github": "chuanseng-ng"
   },
   "metadata": {
-    "description": "Analog / mixed-signal + RF chip design pipeline \u2014 16 plugins across 14 domains plus infrastructure and a meta pipeline orchestrator. Phase 0 skeleton; domains implemented in phases per PLAN.md.",
+    "description": "Analog / mixed-signal + RF chip design pipeline \u2014 16 plugins across 14 domains plus infrastructure and a meta pipeline orchestrator. Phase 0 skeleton; domains implemented in phases per docs/PLAN.md.",
     "version": "0.1.0"
   },
   "plugins": [
