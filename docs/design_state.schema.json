@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/chuanseng-ng/analog-chip-design-agents/blob/main/docs/design_state.schema.json",
+  "title": "design_state.json",
+  "description": "Shared cross-orchestrator state for the analog/mixed-signal + RF pipeline. Machine-readable companion to docs/design_state_schema.md and the authoritative prose schema in plugins/meta/skills/pipeline-orchestration/SKILL.md. Validates both the fix_request and checkpoint variants of design_state.json.",
+  "type": "object",
+  "required": ["format_version"],
+  "additionalProperties": true,
+  "properties": {
+    "format_version": { "enum": ["1.0"] },
+    "design_name": { "type": ["string", "null"] },
+    "created_at": { "type": ["string", "null"] },
+    "updated_at": { "type": ["string", "null"] },
+    "cross_domain_iteration_count": { "type": ["integer", "null"], "minimum": 0 },
+    "pipeline_session_id": { "type": ["string", "null"] },
+    "pipeline_config": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "max_cross_domain_iterations": { "type": "integer", "minimum": 0 },
+        "checkpoints": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "pending_approval": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["checkpoint", "escalation", "constraint_gap"] }
+          }
+        }
+      ]
+    },
+    "approved_checkpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage"],
+        "properties": { "stage": { "type": "string" } }
+      }
+    },
+    "constraints": { "$ref": "#/$defs/constraints" },
+    "fix_requests": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/fixRequest" }
+    },
+    "history": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/historyEntry" }
+    }
+  },
+  "$defs": {
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "historyFailureClass": {
+      "enum": ["none", "functional", "spec_violation", "convergence", "matching",
+               "yield", "drc_lvs", "connectivity", "reliability", "tool_error",
+               "spec_gap", "resource_limit"]
+    },
+    "retryStrategy": { "enum": ["none", "regenerate", "refine", "escalate"] },
+    "suggestedNextStep": {
+      "anyOf": [
+        { "enum": ["proceed", "retry_stage", "escalate", "abandon"] },
+        { "type": "string", "pattern": "^loop_back_to:" }
+      ]
+    },
+    "constraints": {
+      "type": "object",
+      "required": ["supply", "specs"],
+      "additionalProperties": true,
+      "properties": {
+        "supply": { "type": "object" },
+        "specs": { "type": "object" },
+        "rf_specs": { "type": "object" },
+        "corners": { "type": "object" },
+        "yield": { "type": "object" },
+        "area_um2": { "type": "number" },
+        "pdk": { "type": "string" }
+      }
+    },
+    "fixRequest": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "created_at", "updated_at", "created_by", "failure_class",
+                   "retry_strategy", "analysis_name", "spec_or_metric", "corner",
+                   "waveform_path", "log_path", "suspected_circuit", "summary",
+                   "expected_behavior", "observed_behavior", "session_id", "status",
+                   "circuit_response", "history"],
+      "properties": {
+        "id": { "type": "string" },
+        "created_by": { "type": "string" },
+        "failure_class": {
+          "enum": ["spec_violation", "convergence", "functional", "yield", "drc_lvs", "connectivity"]
+        },
+        "retry_strategy": { "$ref": "#/$defs/retryStrategy" },
+        "status": { "enum": ["open", "claimed", "fixed", "abandoned"] },
+        "suspected_circuit": {
+          "type": "object",
+          "required": ["block", "device", "netlist", "schematic_ref"],
+          "additionalProperties": true
+        },
+        "circuit_response": { "type": ["object", "null"] },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "from_status": { "type": ["string", "null"] },
+              "to_status": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "historyEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["confidence", "failure_class", "retry_strategy", "suggested_next_step"],
+      "properties": {
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "failure_class": { "$ref": "#/$defs/historyFailureClass" },
+        "retry_strategy": { "$ref": "#/$defs/retryStrategy" },
+        "suggested_next_step": { "$ref": "#/$defs/suggestedNextStep" }
+      },
+      "comment": "The failure_class -> retry_strategy map (carried from validate.yml) is enforced declaratively below; every history failure_class has exactly one valid retry_strategy.",
+      "allOf": [
+        { "if": { "properties": { "failure_class": { "const": "none" } } },          "then": { "properties": { "retry_strategy": { "const": "none" } } } },
+        { "if": { "properties": { "failure_class": { "const": "functional" } } },    "then": { "properties": { "retry_strategy": { "const": "refine" } } } },
+        { "if": { "properties": { "failure_class": { "const": "spec_violation" } } },"then": { "properties": { "retry_strategy": { "const": "refine" } } } },
+        { "if": { "properties": { "failure_class": { "const": "matching" } } },      "then": { "properties": { "retry_strategy": { "const": "refine" } } } },
+        { "if": { "properties": { "failure_class": { "const": "yield" } } },         "then": { "properties": { "retry_strategy": { "const": "refine" } } } },
+        { "if": { "properties": { "failure_class": { "const": "convergence" } } },   "then": { "properties": { "retry_strategy": { "const": "regenerate" } } } },
+        { "if": { "properties": { "failure_class": { "const": "drc_lvs" } } },       "then": { "properties": { "retry_strategy": { "const": "regenerate" } } } },
+        { "if": { "properties": { "failure_class": { "const": "connectivity" } } },  "then": { "properties": { "retry_strategy": { "const": "refine" } } } },
+        { "if": { "properties": { "failure_class": { "const": "reliability" } } },   "then": { "properties": { "retry_strategy": { "const": "refine" } } } },
+        { "if": { "properties": { "failure_class": { "const": "tool_error" } } },    "then": { "properties": { "retry_strategy": { "const": "regenerate" } } } },
+        { "if": { "properties": { "failure_class": { "const": "spec_gap" } } },      "then": { "properties": { "retry_strategy": { "const": "escalate" } } } },
+        { "if": { "properties": { "failure_class": { "const": "resource_limit" } } },"then": { "properties": { "retry_strategy": { "const": "escalate" } } } }
+      ]
+    }
+  }
+}

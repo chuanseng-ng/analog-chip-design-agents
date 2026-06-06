@@ -1,0 +1,47 @@
+{
+  "_comment": "NEGATIVE fixture — intentionally invalid. The schema MUST reject it. Two seeded faults: (1) history[0].retry_strategy 'regenerate' violates the spec_violation->refine map; (2) fix_requests[0].status 'in_progress' is not an allowed status enum.",
+  "format_version": "1.0",
+  "design_name": "invalid_example",
+  "pipeline_config": { "max_cross_domain_iterations": 3 },
+  "fix_requests": [
+    {
+      "id": "fr_bad_001",
+      "created_at": "2026-03-10T09:30:00Z",
+      "updated_at": "2026-03-10T11:00:00Z",
+      "created_by": "circuit-simulation-orchestrator",
+      "failure_class": "spec_violation",
+      "retry_strategy": "refine",
+      "analysis_name": "ac_stability",
+      "spec_or_metric": "phase_margin_deg",
+      "corner": "ss_125C_vmin",
+      "waveform_path": "sim/waves/ac_stability.raw",
+      "log_path": "sim/logs/ac_stability.log",
+      "suspected_circuit": {
+        "block": "error_amp",
+        "device": "Cc",
+        "netlist": "netlist/ldo_ota.spice",
+        "schematic_ref": "sch/ldo_ota.sch"
+      },
+      "summary": "Phase margin below target",
+      "expected_behavior": "PM >= 60 deg",
+      "observed_behavior": "PM = 41 deg",
+      "session_id": "ps_bad",
+      "status": "in_progress",
+      "circuit_response": null,
+      "history": []
+    }
+  ],
+  "history": [
+    {
+      "timestamp": "2026-03-10T09:30:00Z",
+      "agent": "circuit-simulation-orchestrator",
+      "stage": "corner_analysis",
+      "decision": "escalate",
+      "confidence": "high",
+      "failure_class": "spec_violation",
+      "retry_strategy": "regenerate",
+      "suggested_next_step": "escalate",
+      "reason": "seeded fault: retry_strategy should be 'refine' for spec_violation"
+    }
+  ]
+}

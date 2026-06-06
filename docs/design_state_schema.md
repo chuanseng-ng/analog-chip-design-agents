@@ -9,6 +9,12 @@ the role of the reference repo's `design_state.json`, re-targeted to analog/RF.
 > (§Constraints Schema, §fix_request Schema, §Failure Classification). The working
 > baseline is `format_version "1.0"`. This document summarises the constraints shape that
 > domain SKILL/orchestrators reference for their QoR thresholds.
+>
+> **Machine-readable companion:** [`design_state.schema.json`](design_state.schema.json)
+> (JSON Schema 2020-12) encodes the enums, required fields, and the
+> `failure_class → retry_strategy` map. CI validates the example fixtures against it
+> (see `.github/workflows/validate.yml`); validate a state file locally with
+> `python3 -c "import json,sys;from jsonschema import Draft202012Validator as V;V(json.load(open('docs/design_state.schema.json'))).validate(json.load(open(sys.argv[1])))" path/to/design_state.json`.
 
 ## Constraints
 
