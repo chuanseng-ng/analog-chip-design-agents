@@ -19,9 +19,13 @@ current host (versions and quirks do not transfer across machines). Distilled by
 ## Successful Flags / Install Notes
 
 - open_pdks: install `sky130`, `gf180mcu`, `ihp-sg13g2` with `--enable-...-pdk`; sets `PDK_ROOT`.
-- freepdk45 / asap7: predictive academic PDKs **not** shipped by open_pdks — fetch from their own
-  repos (FreePDK / ASAP7) and point `PDK_ROOT`+`PDK` (and any tech/deck paths) at the unpacked tree
-  before launching Magic/KLayout.
+- freepdk45 / asap7: predictive academic PDKs **not** shipped by open_pdks — fetch from their
+  canonical sources. FreePDK45: NCSU EDA (`https://eda.ncsu.edu/freepdk/freepdk45/`; historical SVN
+  `https://svn.unity.ncsu.edu/osi/freepdk45/trunk`, or the NCSU/Si2 download flow). ASAP7: core
+  files from The OpenROAD Project (`https://github.com/The-OpenROAD-Project/asap7`), with the
+  encrypted Calibre decks requested separately from ASU ASAP (`https://asap.asu.edu/download/`).
+  Then point `PDK_ROOT`+`PDK` (and any tech/deck paths) at the unpacked tree before launching
+  Magic/KLayout.
 - ngspice: `--enable-osdi --enable-xspice` for Verilog-A and mixed-signal code models.
 - Xyce: build with MPI for large Monte-Carlo throughput.
 - uv: prefer the standalone astral.sh installer; pip fallback only for custom/module Python.
