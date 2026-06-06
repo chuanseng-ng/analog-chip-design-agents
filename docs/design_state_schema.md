@@ -92,7 +92,11 @@ Phase 1–4), e.g.:
   "rf":          { "nf_db": null, "gain_db": null, "iip3_dbm": null, "phase_noise_dbc_hz": null,
                    "p1db_dbm": null, "pae_pct": null, "evm_pct": null, "k_factor": null, "s11_db": null, "signoff": false },
   "em":          { "touchstone": "…", "fitted_model": "…", "q_factor": null, "srf_ghz": null,
-                   "fit_error_pct": null, "passivity_pass": false, "signoff": false }
+                   "fit_error_pct": null, "passivity_pass": false, "signoff": false },
+  "ams_integration": { "top_netlist": "…", "top_lvs_errors": null, "ams_sim_pass": false,
+                   "connect_rule_errors": null, "functional_coverage_pct": null,
+                   "power_intent_pass": false, "esd_ring_complete": false,
+                   "island_isolation_pass": false, "signoff": false }
 }
 ```
 
@@ -117,6 +121,14 @@ The RF emphasis tier (`em → rf`) is a parallel branch: `em-modeling` and `rf-d
 **fixed passive data dependency**. If RF finds a passive is the limiter it escalates to the user
 recommending an EM re-solve, rather than opening a cross-domain `fix_request`. (Wiring RF/EM into
 the `fix_request` loop is a deferred enhancement — see `FUTURE_WORK.md`.)
+
+The mixed-signal top domain (`ams_integration`) is **downstream of every block**: it qualifies the
+signed-off IP, assembles the top, and runs chip-level AMS sim. It is wired into the cross-domain
+loop — on a top-LVS/connectivity fault it opens a `fix_request` (`failure_class: connectivity`,
+`route_to: custom-layout`), on a block functional/spec miss it routes to `circuit-design`
+(`functional`/`spec_violation`), and on a connect-module/RNM divergence to `behavioral-modeling`
+(`functional`); the pipeline-orchestrator re-validates the fix via the ams-integration orchestrator.
+Its `integration_signoff` stage is a human-approval checkpoint (chip tape-out gate).
 
 ## History trace
 

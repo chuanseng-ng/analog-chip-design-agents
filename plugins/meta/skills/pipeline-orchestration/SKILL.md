@@ -34,7 +34,7 @@ The protocol has three participants:
 
 | Participant | Role |
 |---|---|
-| **circuit-simulation-orchestrator** / **post-layout-signoff-orchestrator** / **ams-verification-orchestrator** / **physical-verification-orchestrator** / **parasitic-extraction-orchestrator** | Detects the failure; writes a `fix_request` entry to `design_state.fix_requests[]` with `status=open`; terminates with `decision=escalate`. |
+| **circuit-simulation-orchestrator** / **post-layout-signoff-orchestrator** / **ams-verification-orchestrator** / **physical-verification-orchestrator** / **parasitic-extraction-orchestrator** / **ams-integration-orchestrator** | Detects the failure; writes a `fix_request` entry to `design_state.fix_requests[]` with `status=open`; terminates with `decision=escalate`. |
 | **circuit-design-orchestrator** / **behavioral-modeling-orchestrator** / **custom-layout-orchestrator** | Reads the open `fix_request`; sets `status=claimed`; the circuit servicer re-sizes/re-tops the circuit, the modeling servicer re-authors/re-validates the behavioral model, the layout servicer repairs the layout (DRC/LVS/parasitic); sets `status=fixed` with `circuit_response`; terminates. The servicer is chosen by the entry's `route_to` hint (default `circuit-design`). |
 | **pipeline-orchestrator** | Detects open entries; assigns a `pipeline_session_id`; dispatches the chosen servicer (circuit-design, behavioral-modeling, or custom-layout) then re-validation in sequence; enforces a configurable cap (default 3, via `pipeline_config.max_cross_domain_iterations`); archives resolved entries on signoff; escalates via `pending_approval` if cap exceeded. |
 
@@ -49,7 +49,7 @@ All entries in `design_state.fix_requests[]` must conform to this schema:
   "id": "fr_<pipeline_session_id>_<YYYYMMDD>_<HHMMSS>_<seq>",
   "created_at": "<ISO-8601>",
   "updated_at": "<ISO-8601>",
-  "created_by": "circuit-simulation-orchestrator | post-layout-signoff-orchestrator | ams-verification-orchestrator | physical-verification-orchestrator | parasitic-extraction-orchestrator",
+  "created_by": "circuit-simulation-orchestrator | post-layout-signoff-orchestrator | ams-verification-orchestrator | physical-verification-orchestrator | parasitic-extraction-orchestrator | ams-integration-orchestrator",
   "failure_class": "spec_violation | convergence | functional | yield | drc_lvs | connectivity",
   "retry_strategy": "refine",
   "route_to": "circuit-design | behavioral-modeling | custom-layout   (optional; omit for default circuit-design)",
@@ -280,8 +280,8 @@ together on each `history[]` entry:
 | `spec_gap` | `escalate` | ambiguous/missing spec — needs user clarification |
 | `resource_limit` | `escalate` | iteration cap / runtime exceeded — human decision |
 
-Producers that emit a `fix_request` (simulation, post-layout, ams-verification) set its
-`retry_strategy` to `refine` (their classes map to refine).
+Producers that emit a `fix_request` (simulation, post-layout, ams-verification, ams-integration)
+set its `retry_strategy` to `refine` (their classes map to refine).
 
 #### Actionable escalation guidance
 
@@ -353,7 +353,8 @@ Sequential dispatch — never parallel:
 2. **Re-validation** — the orchestrator that validates the fix — block until complete, chosen by
    the producer (`created_by`): a simulation fix re-validates via circuit-simulation, an
    ams-verification fix via ams-verification, a physical-verification fix via
-   physical-verification, and a post-layout/extraction fix via post-layout-signoff.
+   physical-verification, a post-layout/extraction fix via post-layout-signoff, and an
+   ams-integration fix via ams-integration.
 
 Spawn form:
 - Circuit: `subagent_type: analog-design-circuit:circuit-design-orchestrator`
@@ -363,6 +364,7 @@ Spawn form:
 - AMS re-validation: `subagent_type: analog-design-ams-verification:ams-verification-orchestrator`
 - Physical-verification re-validation: `subagent_type: analog-design-physical-verification:physical-verification-orchestrator`
 - Post-layout re-validation: `subagent_type: analog-design-post-layout:post-layout-signoff-orchestrator`
+- AMS-integration re-validation: `subagent_type: analog-design-ams-integration:ams-integration-orchestrator`
 
 Always pass the `fix_request.id` in the subagent prompt.
 
