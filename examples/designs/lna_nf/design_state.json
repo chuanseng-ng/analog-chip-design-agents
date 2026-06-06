@@ -1,0 +1,80 @@
+{
+  "format_version": "1.0",
+  "design_name": "example_lna",
+  "created_at": "2026-03-10T09:00:00Z",
+  "updated_at": "2026-03-10T09:00:00Z",
+  "cross_domain_iteration_count": 0,
+  "pipeline_session_id": null,
+  "pipeline_config": {
+    "max_cross_domain_iterations": 3,
+    "checkpoints": []
+  },
+  "pending_approval": null,
+  "approved_checkpoints": [],
+  "constraints": {
+    "supply": { "vdd_v": 1.2, "vss_v": 0.0 },
+    "specs": { "iip3_dbm": -5 },
+    "rf_specs": { "nf_db": 2.5, "gain_db": 18, "s11_db_max": -10 },
+    "pdk": "ihp-sg13g2"
+  },
+  "em": {
+    "touchstone": "em/touchstone/L_match.s2p",
+    "fitted_model": "em/models/L_match_fitted.spice",
+    "q_factor": 8.0,
+    "srf_ghz": 30.0,
+    "fit_error_pct": 2.0,
+    "passivity_pass": true,
+    "signoff": true
+  },
+  "fix_requests": [
+    {
+      "id": "fr_lna_nf_001",
+      "created_at": "2026-03-10T10:15:00Z",
+      "updated_at": "2026-03-10T10:15:00Z",
+      "created_by": "rf-design-orchestrator",
+      "failure_class": "spec_violation",
+      "retry_strategy": "refine",
+      "route_to": "em-modeling",
+      "analysis_name": "noise_linearity",
+      "spec_or_metric": "nf_db",
+      "corner": "ss_125C_vmin",
+      "waveform_path": "rf/pnoise/lna_nf_ss_125C_vmin.summary",
+      "log_path": "rf/logs/lna_noise_linearity_ss_125C_vmin.log",
+      "suspected_circuit": {
+        "block": "lna_input_stage",
+        "device": "L_match (input matching inductor)",
+        "netlist": "netlist/lna_cs.spice",
+        "schematic_ref": "sch/lna_cs.sch"
+      },
+      "summary": "NF 2.9 dB at SS/125C/Vmin — over 2.5 dB target; limiter is input inductor Q",
+      "expected_behavior": "nf_db <= 2.5 dB across corners per rf_specs",
+      "observed_behavior": "NF 2.9 dB; degradation traced to L_match Q ~ 8 from design_state.em — passive-limited, not circuit-limited",
+      "session_id": "ps20260310_090000",
+      "status": "open",
+      "circuit_response": null,
+      "history": [
+        {
+          "timestamp": "2026-03-10T10:15:00Z",
+          "agent": "rf-design-orchestrator",
+          "from_status": null,
+          "to_status": "open",
+          "note": "NF over target after topology_matching cap; limiter = passive Q — routed to em-modeling"
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "timestamp": "2026-03-10T10:15:00Z",
+      "agent": "rf-design-orchestrator",
+      "stage": "noise_linearity",
+      "decision": "escalate",
+      "confidence": "high",
+      "failure_class": "spec_violation",
+      "retry_strategy": "refine",
+      "suggested_next_step": "escalate",
+      "reason": "NF 2.9 dB > 2.5 dB target; passive-limited — fix_request routed to em-modeling",
+      "constraint_ref": "rf_specs.nf_db"
+    }
+  ]
+}

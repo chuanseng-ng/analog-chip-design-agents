@@ -1,5 +1,34 @@
 # Changelog
 
+## [Unreleased] — Repo quality: schema, tests & end-to-end harness
+
+### Added
+
+- **Machine-readable `design_state.json` schema.** `docs/design_state.schema.json` (JSON Schema
+  2020-12) encodes the enums, required fields, and the `failure_class → retry_strategy` map. CI now
+  validates the example fixtures against it via `jsonschema`, replacing ~115 lines of hand-rolled,
+  drift-prone enum checks in `validate.yml`. A negative fixture under
+  `plugins/meta/skills/pipeline-orchestration/examples/invalid/` proves the schema rejects bad input.
+- **End-to-end validation harness** (closes the deferred item in [`FUTURE_WORK.md`](FUTURE_WORK.md)).
+  `tests/e2e/run_pipeline.py` is a dependency-free replica of the meta dispatch rules that drives
+  `design_state.json` through `open → claimed → fixed`, honouring `route_to`/`created_by` routing,
+  the cross-domain iteration cap, the checkpoint gate, and the sign-off criteria. Two reference
+  designs under `examples/designs/` (`ldo_pm`, `lna_nf`) serve as worked examples; `tests/test_e2e.py`
+  asserts sign-off, cap escalation, checkpoint gating, intake halt, and schema-validity of emitted
+  state.
+- **Python tool test suite.** `tests/` adds pytest coverage for the previously untested
+  `tools/qor_trends.py`, `tools/export_ides.py`, and the memory-keeper `distill.py`, run by a new
+  `tests` CI job.
+- **CI: `ides/` freshness gate.** `validate.yml` now runs `tools/export_ides.py --check` so the
+  generated multi-IDE exports cannot silently drift from the `plugins/` SKILLs. Push/PR branch
+  triggers were aligned (dropped the stale `master`).
+- **Real tool path: ngspice smoke test.** A PDK-independent deck
+  (`examples/designs/ldo_pm/smoke/divider.sp`) runs through
+  `plugins/infrastructure/tools/wrap-ngspice.sh` in `tests/test_tool_smoke.py` (skipped where the
+  binary is absent), promoting ngspice from detect-only to *smoke*. New coverage matrix at
+  [`docs/pdk_support.md`](docs/pdk_support.md) makes the detect-only vs run-in-loop boundary explicit
+  (partially addresses the deferred *deeper tool / PDK coverage* item).
+
 ## [Unreleased] — Phase 7: RF/EM cross-domain integration
 
 ### Added
