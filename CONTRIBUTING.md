@@ -1,8 +1,9 @@
 # Contributing to analog-chip-design-agents
 
-This repo is built in phases (see [`PLAN.md` §12](PLAN.md)). Phase 0 establishes the
-skeleton and conventions; later phases flesh out each domain. Follow the standards
-below so CI (`validate.yml`) stays green.
+All 16 plugins are implemented — the phased build in [`PLAN.md` §12](PLAN.md) is
+complete. Contributions now extend existing domains (new stage rules, QoR metrics,
+loop-backs) or broaden tool/PDK coverage. Follow the standards below so CI
+(`validate.yml`) stays green.
 
 ## Skill File Standards
 
