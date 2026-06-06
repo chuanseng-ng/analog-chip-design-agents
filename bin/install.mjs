@@ -35,11 +35,15 @@ function readJson(path) {
 }
 
 // ── Parse flags ───────────────────────────────────────────────────────────────
+const VALID_IDES = ["claude", "copilot", "gemini", "opencode", "codex", "all"];
 let ide = "claude";
 const argv = process.argv.slice(2);
 for (let i = 0; i < argv.length; i++) {
   const arg = argv[i];
   if (arg === "--ide") {
+    if (i + 1 >= argv.length) {
+      fail(`--ide requires a value (one of: ${VALID_IDES.join(", ")})`);
+    }
     ide = argv[++i];
   } else if (arg === "--global") {
     // accepted for flag-parity with install.sh; only affects non-claude IDEs
@@ -51,7 +55,6 @@ for (let i = 0; i < argv.length; i++) {
   }
 }
 
-const VALID_IDES = ["claude", "copilot", "gemini", "opencode", "codex", "all"];
 if (!VALID_IDES.includes(ide)) {
   fail(`--ide must be one of: ${VALID_IDES.join(", ")}`);
 }

@@ -28,9 +28,14 @@ jobs:
 
       - name: Resolve version
         id: ver
+        # Pass the dispatch input through the env, not direct ${{ }} shell
+        # interpolation, so a crafted tag value can't inject shell commands.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
@@ -82,15 +87,17 @@ jobs:
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
-          # This publish-only job disables setup-node's dependency cache; the
-          # package has no dependencies and nothing to restore.
-          package-manager-cache: false
 
       - name: Resolve version
         id: ver
+        # Pass the dispatch input through the env, not direct ${{ }} shell
+        # interpolation, so a crafted tag value can't inject shell commands.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
