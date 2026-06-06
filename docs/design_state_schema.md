@@ -89,7 +89,10 @@ Phase 1–4), e.g.:
   "post_layout": { "specs_pass": false, "worst_pm_deg": null, "spec_degradation_pct": null, "failing_corners": null, "signoff": false },
   "reliability": { "em_margin_pct": null, "ir_drop_pct": null, "esd_violations": null, "signoff": false },
   "char":        { "lib": "…", "lib_arcs": null, "char_error_pct": null, "corners_covered": null, "signoff": false },
-  "rf":          { "nf_db": null, "iip3_dbm": null, "phase_noise_dbc_hz": null, "signoff": false }
+  "rf":          { "nf_db": null, "gain_db": null, "iip3_dbm": null, "phase_noise_dbc_hz": null,
+                   "p1db_dbm": null, "pae_pct": null, "evm_pct": null, "k_factor": null, "s11_db": null, "signoff": false },
+  "em":          { "touchstone": "…", "fitted_model": "…", "q_factor": null, "srf_ghz": null,
+                   "fit_error_pct": null, "passivity_pass": false, "signoff": false }
 }
 ```
 
@@ -106,6 +109,14 @@ routes to `custom-layout`, a parasitic-induced post-layout spec loss to `custom-
 `circuit-design`, an EM/IR reliability fault to `custom-layout` and an ESD/aging shortfall to
 `circuit-design`. Characterization is a terminal consumer: its loop-backs are stage-local and it
 escalates to the user rather than opening a cross-domain `fix_request`.
+
+The RF emphasis tier (`em → rf`) is a parallel branch: `em-modeling` and `rf-design` are
+**terminal/branch domains** with stage-local loop-backs (em: passivity/fit → `meshing`/
+`geometry_definition`; rf: spec/stability → `topology_matching`, convergence → `harmonic_balance`).
+`em-modeling` writes the `em` block (Touchstone + fitted lumped model) which `rf-design` reads as a
+**fixed passive data dependency**. If RF finds a passive is the limiter it escalates to the user
+recommending an EM re-solve, rather than opening a cross-domain `fix_request`. (Wiring RF/EM into
+the `fix_request` loop is a deferred enhancement — see `FUTURE_WORK.md`.)
 
 ## History trace
 
