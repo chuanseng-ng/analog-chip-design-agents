@@ -22,6 +22,12 @@
 - **CI: `ides/` freshness gate.** `validate.yml` now runs `tools/export_ides.py --check` so the
   generated multi-IDE exports cannot silently drift from the `plugins/` SKILLs. Push/PR branch
   triggers were aligned (dropped the stale `master`).
+- **Real tool path: ngspice smoke test.** A PDK-independent deck
+  (`examples/designs/ldo_pm/smoke/divider.sp`) runs through
+  `plugins/infrastructure/tools/wrap-ngspice.sh` in `tests/test_tool_smoke.py` (skipped where the
+  binary is absent), promoting ngspice from detect-only to *smoke*. New coverage matrix at
+  [`docs/pdk_support.md`](docs/pdk_support.md) makes the detect-only vs run-in-loop boundary explicit
+  (partially addresses the deferred *deeper tool / PDK coverage* item).
 
 ## [Unreleased] — Phase 7: RF/EM cross-domain integration
 

@@ -38,15 +38,19 @@ execution) are the natural place that effort would land.
 
 ---
 
-## Deeper tool / PDK coverage
+## Deeper tool / PDK coverage (partially implemented)
 
-**Status:** deferred. Each domain SKILL lists open-source and proprietary EDA tools, and the
-infrastructure domain detects/wraps them, but tools are largely **detect-only** and the validated
-open PDK set is `sky130` / `gf180mcu` / `ihp-sg13g2`.
+**Status:** in progress. The coverage boundary is now documented in
+[`docs/pdk_support.md`](docs/pdk_support.md), and the **ngspice** path is exercised for real: a
+PDK-independent deck (`examples/designs/ldo_pm/smoke/divider.sp`) runs through
+`plugins/infrastructure/tools/wrap-ngspice.sh` in `tests/test_tool_smoke.py` (skipped where the
+binary is absent, so CI stays green). All other tools remain **detect-only** and the validated open
+PDK set is still `sky130` / `gf180mcu` / `ihp-sg13g2`.
 
-### The deferred work
-Exercise real EDA tool wrappers end-to-end (MCP servers, `wrap-*.sh`) on at least one open-source
-flow, and add/validate additional open PDKs beyond the current three.
+### The remaining work
+Promote more wrappers from *detect-only* to *smoke* (Xyce, Magic, KLayout, Netgen, OpenVAF, openEMS),
+drive at least one full open-source flow in-loop, and add/validate additional open PDKs beyond the
+current three. The "Adding coverage" recipe in `docs/pdk_support.md` is the entry point.
 
 ### Trade-offs
 - **For:** moves the marketplace from "knows the flow" toward "runs the flow" on open tooling; lets
@@ -72,5 +76,6 @@ Phase 6 is implemented — see the [`CHANGELOG.md`](CHANGELOG.md) Phase 6 entry:
   `.github/workflows/release.yml` — all delivered per `PLAN.md` §12 Phase 6.
 
 The RF/EM cross-domain integration that was deferred here is now **complete** (Phase 7), and the
-**end-to-end validation harness** is now implemented (see above). The remaining deferred enhancement
-is **deeper tool / PDK coverage** (real tool-execution in-loop).
+**end-to-end validation harness** is now implemented (see above). **Deeper tool / PDK coverage** is
+now partially implemented (ngspice smoke path + coverage matrix); broadening it to more tools/PDKs
+and a full in-loop flow is the remaining open enhancement.
