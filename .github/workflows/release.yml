@@ -24,13 +24,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - name: Resolve version
         id: ver
+        # Pass the dispatch input through the env, not direct ${{ }} shell
+        # interpolation, so a crafted tag value can't inject shell commands.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
@@ -50,7 +55,7 @@ jobs:
           ls -la dist
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: ${{ steps.ver.outputs.tag }}
@@ -58,3 +63,71 @@ jobs:
           files: |
             dist/*.tar.gz
             dist/*.zip
+
+  npm-publish:
+    name: Publish to npm
+    needs: validate
+    runs-on: ubuntu-latest
+    # Using NPM_TOKEN for the initial publish; migrate to OIDC trusted
+    # publishing (permissions.id-token: write, no token) once the package
+    # exists on npm and a trusted publisher is configured for this workflow.
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # The publish job only reads, stamps locally, and runs `npm publish` —
+          # it never pushes to git, so the GITHUB_TOKEN need not be persisted.
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Resolve version
+        id: ver
+        # Pass the dispatch input through the env, not direct ${{ }} shell
+        # interpolation, so a crafted tag value can't inject shell commands.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stamp tag version into package.json and manifests
+        env:
+          VERSION: ${{ steps.ver.outputs.tag }}
+        run: |
+          node -e "
+          const fs = require('fs');
+          const tag = process.env.VERSION.replace(/^v/, '');
+          const stamp = (p, mut) => { const d = JSON.parse(fs.readFileSync(p)); mut(d); fs.writeFileSync(p, JSON.stringify(d, null, 2) + '\n'); };
+          stamp('package.json', d => d.version = tag);
+          stamp('.claude-plugin/marketplace.json', d => d.metadata.version = tag);
+          for (const dir of fs.readdirSync('plugins')) {
+            const p = 'plugins/' + dir + '/.claude-plugin/plugin.json';
+            if (fs.existsSync(p)) stamp(p, d => d.version = tag);
+          }
+          console.log('Stamped version ' + tag);
+          "
+
+      - name: Publish to npm
+        env:
+          VERSION: ${{ steps.ver.outputs.tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Prerelease tags (rc/beta) publish under the "next" dist-tag so they
+          # never overwrite "latest".
+          TAG=latest
+          case "$VERSION" in
+            *rc*|*beta*) TAG=next ;;
+          esac
+          npm publish --access public --tag "$TAG"

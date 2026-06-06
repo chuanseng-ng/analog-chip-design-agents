@@ -12,7 +12,7 @@
 > (`tools/qor_trends.py`), an end-to-end test harness, and CI. See [`CHANGELOG.md`](CHANGELOG.md) for
 > the phase-by-phase delivery history, [`PLAN.md`](PLAN.md) for the design rationale and roadmap, and
 > [`FUTURE_WORK.md`](FUTURE_WORK.md) for the remaining deferred enhancements (deeper tool/PDK
-> coverage). The **Phase** column below marks each domain's delivery phase.
+> coverage).
 
 This marketplace mirrors the architecture of
 [`digital-chip-design-agents`](https://github.com/chuanseng-ng/digital-chip-design-agents),
@@ -22,38 +22,50 @@ re-targeted to the analog/mixed-signal + RF flow.
 
 ## Available Plugins
 
-| Plugin Name | Domain | Invoke When You Want To... | Phase |
-|-------------|--------|----------------------------|-------|
-| `analog-design-architecture` | Analog Architecture | Budget noise/linearity/power across a signal chain, allocate block specs | 2 |
-| `analog-design-modeling` | Behavioral / AMS Modeling | Write/compile Verilog-A/AMS · VHDL-AMS · SystemVerilog RNM; build connect modules | 2 |
-| `analog-design-circuit` | Circuit (Schematic) Design | Pick a topology, size/bias devices, capture schematic, run pre-layout ERC | 1 |
-| `analog-design-simulation` | Circuit Simulation | Run DC/AC/transient/noise, corners, Monte-Carlo; sign off electrical specs | 1 |
-| `analog-design-ams-verification` | AMS Verification | Build AMS testbench, set connect rules, run analog↔digital co-sim, close coverage | 2 |
-| `analog-design-layout` | Custom Layout | Floorplan, generate matched devices, place/route with symmetry/shielding | 3 |
-| `analog-design-physical-verification` | Physical Verification | Run DRC, LVS, antenna/ERC, density/DFM and sign off | 3 |
-| `analog-design-extraction` | Parasitic Extraction | RC + coupling extraction, build back-annotated post-layout netlist | 3 |
-| `analog-design-post-layout` | Post-Layout Sign-off | Post-PEX corner + MC sim, re-verify specs, gate tape-out | 3 |
-| `analog-design-reliability` | Reliability | EM / IR-drop / ESD / latch-up / aging analysis and sign-off | 4 |
-| `analog-design-characterization` | Characterization | Generate Liberty/.lib + behavioral models, characterize timing/power/noise | 4 |
-| `analog-design-rf` | RF / mmWave Design | S-param, harmonic balance, Pnoise/PAC, IP3, load-pull for LNA/mixer/VCO/PA | 5 |
-| `analog-design-em` | EM Modeling | Solve EM for passives/antennas, extract/fit S-parameter models | 5 |
-| `analog-design-ams-integration` | Mixed-Signal Integration | Qualify analog IP, assemble AMS top, chip-level AMS sim | 6 |
-| `analog-design-infrastructure` | Infrastructure & Memory | Detect analog/RF tools, deploy wrappers, configure MCP, distil memory | 1 |
-| `analog-design-meta` | Pipeline Orchestration | Drive closed-loop spec↔circuit↔layout feedback with iteration cap | 1 |
+| Plugin Name | Domain | Invoke When You Want To... |
+|-------------|--------|----------------------------|
+| `analog-design-architecture` | Analog Architecture | Budget noise/linearity/power across a signal chain, allocate block specs |
+| `analog-design-modeling` | Behavioral / AMS Modeling | Write/compile Verilog-A/AMS · VHDL-AMS · SystemVerilog RNM; build connect modules |
+| `analog-design-circuit` | Circuit (Schematic) Design | Pick a topology, size/bias devices, capture schematic, run pre-layout ERC |
+| `analog-design-simulation` | Circuit Simulation | Run DC/AC/transient/noise, corners, Monte-Carlo; sign off electrical specs |
+| `analog-design-ams-verification` | AMS Verification | Build AMS testbench, set connect rules, run analog↔digital co-sim, close coverage |
+| `analog-design-layout` | Custom Layout | Floorplan, generate matched devices, place/route with symmetry/shielding |
+| `analog-design-physical-verification` | Physical Verification | Run DRC, LVS, antenna/ERC, density/DFM and sign off |
+| `analog-design-extraction` | Parasitic Extraction | RC + coupling extraction, build back-annotated post-layout netlist |
+| `analog-design-post-layout` | Post-Layout Sign-off | Post-PEX corner + MC sim, re-verify specs, gate tape-out |
+| `analog-design-reliability` | Reliability | EM / IR-drop / ESD / latch-up / aging analysis and sign-off |
+| `analog-design-characterization` | Characterization | Generate Liberty/.lib + behavioral models, characterize timing/power/noise |
+| `analog-design-rf` | RF / mmWave Design | S-param, harmonic balance, Pnoise/PAC, IP3, load-pull for LNA/mixer/VCO/PA |
+| `analog-design-em` | EM Modeling | Solve EM for passives/antennas, extract/fit S-parameter models |
+| `analog-design-ams-integration` | Mixed-Signal Integration | Qualify analog IP, assemble AMS top, chip-level AMS sim |
+| `analog-design-infrastructure` | Infrastructure & Memory | Detect analog/RF tools, deploy wrappers, configure MCP, distil memory |
+| `analog-design-meta` | Pipeline Orchestration | Drive closed-loop spec↔circuit↔layout feedback with iteration cap |
 
 ---
 
 ## Install
 
-All 16 plugins are fully implemented. Install from inside Claude Code:
+All 16 plugins are fully implemented.
 
-```text
-/plugin marketplace add github:chuanseng-ng/analog-chip-design-agents
-/plugin install analog-design-circuit@analog-chip-design-agents
-/plugin install analog-design-simulation@analog-chip-design-agents
+### Option A — npm (recommended, no clone)
+
+If you have Node.js (≥18), install and enable all 16 plugins with a single
+command — no `git clone` and no Python required. The installer copies each
+plugin into your Claude Code plugin cache and enables them in `settings.json`,
+then you restart Claude Code:
+
+```bash
+npx analog-chip-design-agents
 ```
 
-Or install everything in one step with the bundled scripts (they read the plugin list from
+Re-run the same command to pick up future updates. Works identically on macOS,
+Linux, and Windows (a single Node process copies plugins sequentially, so there
+is no concurrent-write contention on the cache directory). This currently
+installs the Claude Code plugins only; for other IDEs use Option B below.
+
+### Option B — Install script
+
+Install everything in one step with the bundled scripts (they read the plugin list from
 `.claude-plugin/marketplace.json`, so they stay in sync):
 
 ```bash
@@ -65,6 +77,16 @@ Or install everything in one step with the bundled scripts (they read the plugin
 ```powershell
 ./install.ps1           # Windows / PowerShell equivalent
 ./install.ps1 -List
+```
+
+### Option C — Marketplace (selective install)
+
+If you only need specific domains, install them from inside Claude Code:
+
+```text
+/plugin marketplace add github:chuanseng-ng/analog-chip-design-agents
+/plugin install analog-design-circuit@analog-chip-design-agents
+/plugin install analog-design-simulation@analog-chip-design-agents
 ```
 
 ### Other AI assistants

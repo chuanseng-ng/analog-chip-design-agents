@@ -1,0 +1,46 @@
+{
+  "name": "analog-chip-design-agents",
+  "version": "1.0.0",
+  "description": "Full analog / mixed-signal + RF chip design pipeline — 16 Claude Code plugins across 14 domains plus infrastructure and a meta pipeline orchestrator, with closed-loop spec↔circuit↔layout feedback.",
+  "type": "module",
+  "bin": {
+    "analog-chip-design-agents": "bin/install.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/",
+    "plugins/",
+    "ides/",
+    ".claude-plugin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "chip-design",
+    "analog",
+    "mixed-signal",
+    "rf",
+    "eda",
+    "spice",
+    "verilog-a",
+    "vlsi",
+    "agents"
+  ],
+  "homepage": "https://github.com/chuanseng-ng/analog-chip-design-agents#readme",
+  "bugs": {
+    "url": "https://github.com/chuanseng-ng/analog-chip-design-agents/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chuanseng-ng/analog-chip-design-agents.git"
+  },
+  "author": {
+    "name": "chuanseng-ng",
+    "url": "https://github.com/chuanseng-ng"
+  },
+  "license": "MIT"
+}
