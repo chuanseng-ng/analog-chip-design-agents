@@ -1,29 +1,48 @@
 #!/usr/bin/env node
-// install.mjs — installs analog-chip-design-agents plugins for Claude Code.
+// install.mjs — installs analog-chip-design-agents for the AI coding agents you
+// actually have installed.
 //
 // Usage (via npm):
-//   npx analog-chip-design-agents            # Claude Code (default)
-//   npx analog-chip-design-agents --ide claude
+//   npx analog-chip-design-agents                 # auto-detect + confirm (default)
+//   npx analog-chip-design-agents --yes           # auto-detect, no prompt
+//   npx analog-chip-design-agents --ide claude    # install one target explicitly
+//   npx analog-chip-design-agents --ide all       # install every supported target
+//   npx analog-chip-design-agents --ide gemini --global
 //
-// This is the cross-platform Node port of the Claude Code path of install.sh.
-// It runs as a single process and copies each plugin sequentially, so there is
-// no concurrent write contention to the shared cache directory — the file-lock
-// race that affected parallel marketplace installs on Windows cannot occur here.
+// With no --ide flag the installer detects which of the five supported agents
+// (claude, codex, opencode, gemini, copilot) are present, shows what it found
+// and where each would write, then installs to the detected targets after a
+// confirmation. Explicit --ide bypasses detection.
 //
-// The other IDE targets (copilot, gemini, opencode, codex) are not yet ported
-// to Node; use install.sh / install.ps1 for those. The shell scripts remain the
-// supported fallback when Node is unavailable.
+// This is a single Node process with no Python dependency: the Claude Code path
+// copies plugins sequentially (no concurrent-write race) and the other four
+// targets are generated natively in Node, porting the logic that previously
+// lived in the Python blocks of install.sh.
 
-import { readFileSync, writeFileSync, existsSync, rmSync, mkdirSync, cpSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  statSync,
+  readdirSync,
+  rmSync,
+  mkdirSync,
+  cpSync,
+} from "node:fs";
 import { homedir } from "node:os";
-import { join, dirname, resolve } from "node:path";
+import { join, dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createInterface } from "node:readline/promises";
+import { stdin, stdout } from "node:process";
+import { detectAgents } from "./detect.mjs";
 
 const MARKETPLACE = "analog-chip-design-agents";
 
 // Package root = parent of this bin/ directory. Resolving from import.meta.url
 // (not process.cwd) makes the installer work from npm's unpacked layout.
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+const SUPPORTED = ["claude", "copilot", "gemini", "opencode", "codex"];
 
 function fail(msg) {
   console.error(`ERROR: ${msg}`);
@@ -34,131 +53,474 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-// ── Parse flags ───────────────────────────────────────────────────────────────
-const VALID_IDES = ["claude", "copilot", "gemini", "opencode", "codex", "all"];
-let ide = "claude";
-const argv = process.argv.slice(2);
-for (let i = 0; i < argv.length; i++) {
-  const arg = argv[i];
-  if (arg === "--ide") {
-    if (i + 1 >= argv.length) {
-      fail(`--ide requires a value (one of: ${VALID_IDES.join(", ")})`);
+// Strip a leading YAML frontmatter block (--- ... ---) from a SKILL.md body.
+// Mirrors re.sub(r'^---\n.*?\n---\n', '', content, count=1, DOTALL).strip().
+function stripFrontmatter(content) {
+  return content.replace(/^---\n[\s\S]*?\n---\n/, "").trim();
+}
+
+// ── Source enumeration (replaces Python glob, sorted by POSIX path) ────────────
+function sortedSubdirs(p) {
+  if (!existsSync(p)) return [];
+  return readdirSync(p, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name)
+    .sort();
+}
+
+const posixKey = (p) => p.split(sep).join("/");
+
+// All plugins/<domain>/skills/<name>/SKILL.md, sorted like sorted(glob(...)).
+function listSkills(root) {
+  const out = [];
+  for (const domain of sortedSubdirs(join(root, "plugins"))) {
+    const skillsDir = join(root, "plugins", domain, "skills");
+    for (const sub of sortedSubdirs(skillsDir)) {
+      const path = join(skillsDir, sub, "SKILL.md");
+      if (existsSync(path)) out.push({ path, domain });
     }
-    ide = argv[++i];
-  } else if (arg === "--global") {
-    // accepted for flag-parity with install.sh; only affects non-claude IDEs
-  } else if (arg === "-h" || arg === "--help") {
-    console.log("Usage: npx analog-chip-design-agents [--ide claude]");
-    process.exit(0);
-  } else {
-    fail(`Unknown argument: ${arg}\nUsage: npx analog-chip-design-agents [--ide claude]`);
   }
+  out.sort((a, b) => (posixKey(a.path) < posixKey(b.path) ? -1 : 1));
+  return out;
 }
 
-if (!VALID_IDES.includes(ide)) {
-  fail(`--ide must be one of: ${VALID_IDES.join(", ")}`);
+// All plugins/<domain>/agents/*.md, sorted like sorted(glob(...)).
+function listAgents(root) {
+  const out = [];
+  for (const domain of sortedSubdirs(join(root, "plugins"))) {
+    const agentsDir = join(root, "plugins", domain, "agents");
+    if (!existsSync(agentsDir)) continue;
+    for (const f of readdirSync(agentsDir)
+      .filter((f) => f.endsWith(".md"))
+      .sort()) {
+      out.push({ path: join(agentsDir, f), domain });
+    }
+  }
+  out.sort((a, b) => (posixKey(a.path) < posixKey(b.path) ? -1 : 1));
+  return out;
 }
 
-if (ide !== "claude") {
-  console.log(
-    `The npm installer currently supports only --ide claude.\n` +
-      `For "${ide}", run the shell installer from a cloned repo:\n` +
-      `  bash install.sh --ide ${ide}      (macOS/Linux/Git Bash)\n` +
-      `  .\\install.ps1 -IDE ${ide}         (Windows PowerShell)`
-  );
-  if (ide !== "all") process.exit(0);
-  // for "all", continue with the Claude Code portion below.
+// ── Durable payload for reference-based targets (gemini, opencode) ─────────────
+// Those two embed runtime file references (@<path> and {file:<path>}). When run
+// via npx, PACKAGE_ROOT is a reclaimable temp dir, so referenced paths would
+// dangle. Copy plugins/ + ides/ once to a stable home-dir location and point the
+// embedded references there. (Copilot and codex inline content, so they don't
+// need this.)
+let _payloadRoot = null;
+function ensureDurablePayload() {
+  if (_payloadRoot) return _payloadRoot;
+  // Version the payload directory so references generated by one package version
+  // stay valid after a different version is later installed: each version owns
+  // its own tree instead of all installs overwriting a single shared "payload".
+  const version = readJson(join(PACKAGE_ROOT, "package.json")).version;
+  const root = join(homedir(), ".analog-chip-design-agents", "payload", version);
+  for (const sub of ["plugins", "ides"]) {
+    const from = join(PACKAGE_ROOT, sub);
+    if (!existsSync(from)) continue;
+    const to = join(root, sub);
+    rmSync(to, { recursive: true, force: true });
+    mkdirSync(dirname(to), { recursive: true });
+    cpSync(from, to, { recursive: true });
+  }
+  _payloadRoot = root;
+  return root;
 }
 
-// ── Load plugin list from the marketplace manifest (single source of truth) ────
-const marketplacePath = join(PACKAGE_ROOT, ".claude-plugin", "marketplace.json");
-if (!existsSync(marketplacePath)) {
-  fail(`Cannot locate ${marketplacePath}. The package appears to be incomplete.`);
-}
-const plugins = readJson(marketplacePath).plugins;
+// ═══════════════════════════════════════════════════════════════════════════════
+// Claude Code install (global ~/.claude plugin cache + settings.json)
+// ═══════════════════════════════════════════════════════════════════════════════
+function installClaude({ required }) {
+  const marketplacePath = join(PACKAGE_ROOT, ".claude-plugin", "marketplace.json");
+  if (!existsSync(marketplacePath)) {
+    fail(`Cannot locate ${marketplacePath}. The package appears to be incomplete.`);
+  }
+  const plugins = readJson(marketplacePath).plugins;
 
-// ── Locate the Claude config directory ─────────────────────────────────────────
-// os.homedir() resolves %USERPROFILE% on Windows and $HOME elsewhere, matching
-// install.sh's per-platform handling without needing a shell.
-const claudeDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
-const cacheDir = join(claudeDir, "plugins", "cache", MARKETPLACE);
-// Durable copy of the marketplace source. Claude Code needs source.path to stay
-// valid for catalog refresh and updates, so we copy the payload under claudeDir
-// rather than pointing at the npm/npx package dir, which is reclaimable.
-const installRoot = join(claudeDir, "plugins", "marketplaces", MARKETPLACE);
-const settingsPath = join(claudeDir, "settings.json");
+  // os.homedir() resolves %USERPROFILE% on Windows and $HOME elsewhere.
+  const claudeDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
+  const cacheDir = join(claudeDir, "plugins", "cache", MARKETPLACE);
+  // Durable copy of the marketplace source. Claude Code needs source.path to stay
+  // valid for catalog refresh and updates, so we copy the payload under claudeDir
+  // rather than pointing at the npm/npx package dir, which is reclaimable.
+  const installRoot = join(claudeDir, "plugins", "marketplaces", MARKETPLACE);
+  const settingsPath = join(claudeDir, "settings.json");
 
-console.log(`Claude config : ${claudeDir}`);
-console.log(`Plugin cache  : ${cacheDir}`);
-console.log("");
+  console.log("\nInstalling Claude Code plugins...");
+  console.log(`Claude config : ${claudeDir}`);
+  console.log(`Plugin cache  : ${cacheDir}`);
 
-if (!existsSync(claudeDir)) {
-  fail(
-    `Claude config directory not found at ${claudeDir}\n` +
-      `  Make sure Claude Code is installed and has been run at least once.`
-  );
-}
+  if (!existsSync(claudeDir)) {
+    const msg =
+      `Claude config directory not found at ${claudeDir}\n` +
+      `  Make sure Claude Code is installed and has been run at least once.`;
+    if (required) fail(msg);
+    console.log(`  [skip] ${msg}`);
+    return;
+  }
 
-// ── Copy each plugin into its own versioned cache directory ────────────────────
-console.log("Installing Claude Code plugin cache...");
-for (const plugin of plugins) {
-  const name = plugin.name;
-  const src = resolve(PACKAGE_ROOT, plugin.source);
+  for (const plugin of plugins) {
+    const name = plugin.name;
+    const src = resolve(PACKAGE_ROOT, plugin.source);
 
-  // Each plugin installs under the version declared in its own plugin.json, so
-  // plugins at different versions (e.g. meta at 1.0.0 vs the rest at 1.2.0) land
-  // in the correct cache path. Falls back to the package version if absent.
-  const manifestPath = join(src, ".claude-plugin", "plugin.json");
-  const version = existsSync(manifestPath)
-    ? readJson(manifestPath).version
-    : readJson(join(PACKAGE_ROOT, "package.json")).version;
+    // Each plugin installs under the version declared in its own plugin.json, so
+    // plugins at different versions land in the correct cache path. Falls back to
+    // the package version if absent.
+    const manifestPath = join(src, ".claude-plugin", "plugin.json");
+    const version = existsSync(manifestPath)
+      ? readJson(manifestPath).version
+      : readJson(join(PACKAGE_ROOT, "package.json")).version;
 
-  const dest = join(cacheDir, name, version);
-  rmSync(dest, { recursive: true, force: true });
-  mkdirSync(dest, { recursive: true });
+    const dest = join(cacheDir, name, version);
+    rmSync(dest, { recursive: true, force: true });
+    mkdirSync(dest, { recursive: true });
 
-  for (const sub of ["agents", "skills", ".claude-plugin"]) {
-    const from = join(src, sub);
-    if (existsSync(from)) cpSync(from, join(dest, sub), { recursive: true });
+    for (const sub of ["agents", "skills", ".claude-plugin"]) {
+      const from = join(src, sub);
+      if (existsSync(from)) cpSync(from, join(dest, sub), { recursive: true });
+    }
+    for (const file of ["README.md", "LICENSE"]) {
+      const from = join(PACKAGE_ROOT, file);
+      if (existsSync(from)) cpSync(from, join(dest, file));
+    }
+    console.log(`  [OK] ${name}`);
+  }
+
+  // Copy the marketplace source to a durable location under claudeDir so refresh
+  // and updates keep working after the reclaimable npm/npx package dir is gone.
+  rmSync(installRoot, { recursive: true, force: true });
+  mkdirSync(installRoot, { recursive: true });
+  for (const sub of [".claude-plugin", "plugins"]) {
+    const from = join(PACKAGE_ROOT, sub);
+    if (existsSync(from)) cpSync(from, join(installRoot, sub), { recursive: true });
   }
   for (const file of ["README.md", "LICENSE"]) {
     const from = join(PACKAGE_ROOT, file);
-    if (existsSync(from)) cpSync(from, join(dest, file));
+    if (existsSync(from)) cpSync(from, join(installRoot, file));
   }
 
-  console.log(`  [OK] ${name}`);
+  // Register plugins in settings.json (read-merge-write).
+  const cfg = existsSync(settingsPath) ? readJson(settingsPath) : {};
+  const enabled = (cfg.enabledPlugins ??= {});
+  for (const plugin of plugins) {
+    enabled[`${plugin.name}@${MARKETPLACE}`] = true;
+  }
+  const marketplaces = (cfg.extraKnownMarketplaces ??= {});
+  marketplaces[MARKETPLACE] = { source: { source: "directory", path: installRoot } };
+
+  writeFileSync(settingsPath, JSON.stringify(cfg, null, 2) + "\n");
+  console.log(`  [OK] ${plugins.length} plugins enabled in ${settingsPath}`);
+  console.log(`  Restart Claude Code to activate all ${plugins.length} plugins.`);
 }
 
-// ── Copy the marketplace source to a durable location under claudeDir ───────────
-// This is what settings.json points at, so marketplace refresh/updates keep
-// working even after the (reclaimable) npm/npx package directory is cleaned up.
-rmSync(installRoot, { recursive: true, force: true });
-mkdirSync(installRoot, { recursive: true });
-for (const sub of [".claude-plugin", "plugins"]) {
-  const from = join(PACKAGE_ROOT, sub);
-  if (existsSync(from)) cpSync(from, join(installRoot, sub), { recursive: true });
-}
-for (const file of ["README.md", "LICENSE"]) {
-  const from = join(PACKAGE_ROOT, file);
-  if (existsSync(from)) cpSync(from, join(installRoot, file));
+// ═══════════════════════════════════════════════════════════════════════════════
+// GitHub Copilot install (.github/ in cwd) — inlines SKILL.md bodies
+// ═══════════════════════════════════════════════════════════════════════════════
+function installCopilot(targetDir) {
+  console.log("\nInstalling GitHub Copilot instructions...");
+  const applyMap = readJson(join(PACKAGE_ROOT, "ides", "copilot", "applyto-map.json"));
+
+  const ghDir = join(targetDir, ".github", "instructions");
+  mkdirSync(ghDir, { recursive: true });
+  cpSync(
+    join(PACKAGE_ROOT, "ides", "copilot", ".github", "copilot-instructions.md"),
+    join(targetDir, ".github", "copilot-instructions.md")
+  );
+
+  const skills = listSkills(PACKAGE_ROOT);
+  for (const { path, domain } of skills) {
+    const applyto = applyMap[domain] ?? "**/*";
+    const body = stripFrontmatter(readFileSync(path, "utf8"));
+    writeFileSync(
+      join(ghDir, `${domain}.instructions.md`),
+      `---\napplyTo: "${applyto}"\n---\n\n${body}\n`
+    );
+    console.log(`  [OK] .github/instructions/${domain}.instructions.md`);
+  }
+  console.log(`\nCopilot: ${skills.length} instruction files installed.`);
+  console.log("Commit .github/ to share domain rules with your team.");
 }
 
-// ── Register plugins in settings.json (read-merge-write, replaces the Python) ───
-console.log("");
-console.log(`Updating ${settingsPath} ...`);
+// ═══════════════════════════════════════════════════════════════════════════════
+// Gemini Code Assist install (GEMINI.md) — references skill/agent files
+// ═══════════════════════════════════════════════════════════════════════════════
+function installGemini(outPath, refRoot) {
+  console.log("\nInstalling Gemini Code Assist context file...");
+  const header = readFileSync(
+    join(PACKAGE_ROOT, "ides", "gemini", "gemini-header.md"),
+    "utf8"
+  ).trim();
 
-const cfg = existsSync(settingsPath) ? readJson(settingsPath) : {};
-const enabled = (cfg.enabledPlugins ??= {});
-for (const plugin of plugins) {
-  enabled[`${plugin.name}@${MARKETPLACE}`] = true;
+  const lines = [
+    "# Analog Chip Design Agents — Gemini Context",
+    "<!-- Generated by analog-chip-design-agents installer (npm) -->",
+    `<!-- Source: ${refRoot} -->`,
+    "",
+    header,
+    "",
+    "## Domain Knowledge",
+    "",
+  ];
+
+  const skills = listSkills(refRoot);
+  const agents = Object.fromEntries(listAgents(refRoot).map((a) => [a.domain, a.path]));
+  for (const { path, domain } of skills) {
+    lines.push(`### ${domain}`, "", `@${path}`);
+    if (agents[domain]) lines.push(`@${agents[domain]}`);
+    lines.push("");
+  }
+
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, lines.join("\n") + "\n");
+  console.log(`  [OK] ${outPath}`);
+  console.log(
+    `  (${skills.length} domains, ${skills.length + Object.keys(agents).length} @-imports)`
+  );
 }
-const marketplaces = (cfg.extraKnownMarketplaces ??= {});
-marketplaces[MARKETPLACE] = {
-  source: { source: "directory", path: installRoot },
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OpenCode install (opencode.json) — references agent files via {file:...}
+// ═══════════════════════════════════════════════════════════════════════════════
+const OPENCODE_MODE_DISPLAY = {
+  architecture: ["analog-architecture", "Analog Architecture & Spec"],
+  modeling: ["analog-modeling", "Behavioral Modeling (Verilog-A/AMS)"],
+  circuit: ["analog-circuit", "Circuit Design & Sizing"],
+  simulation: ["analog-sim", "Circuit Simulation (SPICE)"],
+  "ams-verification": ["analog-ams-ver", "AMS Verification"],
+  layout: ["analog-layout", "Custom Layout"],
+  "physical-verification": ["analog-pv", "Physical Verification (DRC/LVS)"],
+  extraction: ["analog-pex", "Parasitic Extraction"],
+  "post-layout": ["analog-postlayout", "Post-Layout Sign-off"],
+  reliability: ["analog-reliability", "Reliability (EM/IR/Aging/ESD)"],
+  characterization: ["analog-char", "Characterization & Liberty"],
+  rf: ["analog-rf", "RF/mmWave Design"],
+  em: ["analog-em", "EM Modeling"],
+  "ams-integration": ["analog-ams-int", "AMS Top Integration"],
 };
 
-writeFileSync(settingsPath, JSON.stringify(cfg, null, 2) + "\n");
-console.log(`  [OK] ${plugins.length} plugins enabled in settings.json`);
+// Mirrors domain.replace('-', ' ').title() for domains absent from the map.
+function titleCase(domain) {
+  return domain
+    .split("-")
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(" ");
+}
 
-console.log("");
-console.log(`Done! Restart Claude Code to activate all ${plugins.length} plugins.`);
+// Extract the YAML `description:` block from an agent file's frontmatter,
+// mirroring re.search(r'^description:\s*>?\s*\n((?:  .+\n)+)', content, MULTILINE).
+function extractDescription(content) {
+  const m = content.match(/^description:\s*>?\s*\n((?:  .+\n)+)/m);
+  if (!m) return null;
+  return m[1]
+    .trim()
+    .split("\n")
+    .map((l) => l.trim())
+    .join(" ");
+}
+
+function installOpenCode(target, isGlobal, refRoot) {
+  console.log("\nInstalling OpenCode config...");
+  const base = readJson(join(PACKAGE_ROOT, "ides", "opencode", "opencode-base.json"));
+  const model = base.model ?? "anthropic/claude-sonnet-4-5";
+
+  const modes = {};
+  for (const { path, domain } of listAgents(refRoot)) {
+    const content = readFileSync(path, "utf8");
+    const desc = (extractDescription(content) ?? domain).slice(0, 120);
+    const [modeKey, modeName] = OPENCODE_MODE_DISPLAY[domain] ?? [
+      `analog-${domain}`,
+      titleCase(domain),
+    ];
+    modes[modeKey] = {
+      name: modeName,
+      description: desc,
+      model,
+      prompt: `{file:${path}}`,
+    };
+  }
+
+  let out;
+  if (isGlobal && existsSync(target)) {
+    const existing = readJson(target);
+    existing.mode = { ...(existing.mode ?? {}), ...modes };
+    out = existing;
+  } else {
+    base.mode = modes;
+    out = base;
+    if (isGlobal) mkdirSync(dirname(target), { recursive: true });
+  }
+
+  writeFileSync(target, JSON.stringify(out, null, 2) + "\n");
+  console.log(`  [OK] ${target} — ${Object.keys(modes).length} modes`);
+  console.log("  Use /mode analog-<domain> in OpenCode to activate a domain.");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OpenAI Codex CLI install (AGENTS.md) — inlines SKILL.md bodies
+// ═══════════════════════════════════════════════════════════════════════════════
+function installCodex(outPath) {
+  console.log("\nInstalling OpenAI Codex CLI context file...");
+  const header = readFileSync(
+    join(PACKAGE_ROOT, "ides", "codex", "AGENTS.md"),
+    "utf8"
+  ).trim();
+
+  const lines = [
+    "# Analog Chip Design Agents — Codex CLI Context",
+    "<!-- Generated by analog-chip-design-agents installer (npm) -->",
+    `<!-- Source: ${PACKAGE_ROOT} -->`,
+    "",
+    header,
+    "",
+    "## Domain Knowledge",
+    "",
+  ];
+
+  const skills = listSkills(PACKAGE_ROOT);
+  for (const { path, domain } of skills) {
+    const body = stripFrontmatter(readFileSync(path, "utf8"));
+    lines.push(`### ${domain}`, "", body, "");
+  }
+
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, lines.join("\n") + "\n");
+  console.log(`  [OK] ${outPath}`);
+  console.log(`  (${skills.length} domains inlined)`);
+}
+
+// ── Dispatch a single target ───────────────────────────────────────────────────
+function runInstall(id, { global, claudeRequired }) {
+  switch (id) {
+    case "claude":
+      return installClaude({ required: claudeRequired });
+    case "copilot":
+      return installCopilot(process.cwd());
+    case "gemini":
+      return installGemini(
+        global ? join(homedir(), "GEMINI.md") : join(process.cwd(), "GEMINI.md"),
+        ensureDurablePayload()
+      );
+    case "opencode":
+      return installOpenCode(
+        global
+          ? join(homedir(), ".config", "opencode", "config.json")
+          : join(process.cwd(), "opencode.json"),
+        global,
+        ensureDurablePayload()
+      );
+    case "codex":
+      return installCodex(
+        global ? join(homedir(), ".codex", "instructions.md") : join(process.cwd(), "AGENTS.md")
+      );
+  }
+}
+
+// ── Flag parsing ────────────────────────────────────────────────────────────────
+function parseArgs(argv) {
+  let ide = null;
+  let global = false;
+  let yes = false;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === "--ide") {
+      const value = argv[++i];
+      // A trailing `--ide` would leave ide undefined and silently fall back to
+      // auto-detect — a bad failure mode for an install command, so reject it.
+      if (!value || value.startsWith("-")) {
+        fail(`--ide requires one of: ${[...SUPPORTED, "all"].join(", ")}`);
+      }
+      ide = value;
+    } else if (arg === "--global") {
+      global = true;
+    } else if (arg === "--yes" || arg === "-y") {
+      yes = true;
+    } else if (arg === "-h" || arg === "--help") {
+      console.log(
+        "Usage: npx analog-chip-design-agents [--ide claude|copilot|gemini|opencode|codex|all] [--global] [--yes]\n" +
+          "  With no --ide, detects installed agents and installs to them after confirmation."
+      );
+      process.exit(0);
+    } else {
+      fail(
+        `Unknown argument: ${arg}\n` +
+          `Usage: npx analog-chip-design-agents [--ide <target>] [--global] [--yes]`
+      );
+    }
+  }
+  return { ide, global, yes };
+}
+
+// ── Confirm step (interactive only) ─────────────────────────────────────────────
+async function confirmSelection(detectedIds) {
+  const rl = createInterface({ input: stdin, output: stdout });
+  try {
+    const ans = (
+      await rl.question(
+        `\nInstall to all detected targets? [Y/n] (or list a subset, e.g. "claude,codex"): `
+      )
+    )
+      .trim()
+      .toLowerCase();
+    if (ans === "" || ans === "y" || ans === "yes") return detectedIds;
+    if (ans === "n" || ans === "no") return [];
+    const picked = ans
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => detectedIds.includes(s));
+    return picked;
+  } finally {
+    rl.close();
+  }
+}
+
+// ── Main ────────────────────────────────────────────────────────────────────────
+async function main() {
+  const { ide, global, yes } = parseArgs(process.argv.slice(2));
+
+  // Explicit mode: install exactly what was requested, no detection.
+  if (ide) {
+    const valid = [...SUPPORTED, "all"];
+    if (!valid.includes(ide)) fail(`--ide must be one of: ${valid.join(", ")}`);
+    const ids = ide === "all" ? SUPPORTED : [ide];
+    for (const id of ids) runInstall(id, { global, claudeRequired: true });
+    console.log("\nDone.");
+    return;
+  }
+
+  // Detect mode (default).
+  console.log("Detecting installed AI coding agents...\n");
+  const results = detectAgents({ global });
+  for (const r of results) {
+    const mark = r.installed ? "[found]" : "[  -  ]";
+    const why = r.installed ? `— ${r.reason}` : "— not detected";
+    console.log(`  ${mark} ${r.label.padEnd(20)} ${why}`);
+    if (r.installed) console.log(`           → ${r.destination}`);
+  }
+
+  const detected = results.filter((r) => r.installed).map((r) => r.id);
+  if (detected.length === 0) {
+    console.log(
+      "\nNo supported agents detected. Install one explicitly with:\n" +
+        "  npx analog-chip-design-agents --ide claude   (or copilot|gemini|opencode|codex|all)"
+    );
+    return;
+  }
+
+  let selected = detected;
+  const interactive = !yes && stdin.isTTY && stdout.isTTY;
+  if (interactive) {
+    selected = await confirmSelection(detected);
+    if (selected.length === 0) {
+      console.log("\nNothing selected. Aborted.");
+      return;
+    }
+  } else {
+    console.log(
+      `\n${yes ? "--yes given" : "Non-interactive shell"}: installing to all detected targets.`
+    );
+  }
+
+  for (const id of selected) runInstall(id, { global, claudeRequired: false });
+  console.log("\nDone.");
+}
+
+main();

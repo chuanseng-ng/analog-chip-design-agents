@@ -1,0 +1,18 @@
+{
+  "architecture":          "**/*spec*,**/*budget*,**/*plan*,**/arch*/**",
+  "modeling":              "**/*.va,**/*.vams,**/*.vhdms,**/*verilog?a*,**/model*/**",
+  "circuit":               "**/*.cdl,**/*.sch,**/*.scs,**/schematic*/**,**/circuit*/**",
+  "simulation":            "**/*.sp,**/*.cir,**/*.spi,**/*.scs,**/*.meas,**/sim/**,**/*spice*",
+  "ams-verification":      "**/*.va,**/*.vams,**/tb/**,**/*cosim*,**/*_tb.*",
+  "layout":                "**/*.gds,**/*.gds2,**/*.oas,**/*.lef,**/*.def,**/layout/**",
+  "physical-verification": "**/*.gds,**/*drc*,**/*lvs*,**/*.lef,**/*.def,**/*runset*,**/pv/**",
+  "extraction":            "**/*.spef,**/*pex*,**/*rcx*,**/*extract*",
+  "post-layout":           "**/*postlayout*,**/*.spef,**/*signoff*,**/*pvt*",
+  "reliability":           "**/*em*ir*,**/*aging*,**/*esd*,**/*latchup*,**/*reliab*",
+  "characterization":      "**/*.lib,**/*.liberty,**/*char*,**/*ecsm*,**/*ccs*",
+  "rf":                    "**/*.s2p,**/*.s?p,**/*.snp,**/*rf*,**/*sparam*",
+  "em":                    "**/*.s2p,**/*.snp,**/*em*,**/*.gds,**/*emx*,**/*momentum*",
+  "ams-integration":       "**/*top*,**/*integration*,**/*chip*,**/*.va,**/*.vams",
+  "infrastructure":        "**/infrastructure/**,plugins/infrastructure/**",
+  "meta":                  "**/design_state.json,plugins/meta/**"
+}

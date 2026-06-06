@@ -7,8 +7,9 @@
 [![Validate](https://github.com/chuanseng-ng/analog-chip-design-agents/actions/workflows/validate.yml/badge.svg)](https://github.com/chuanseng-ng/analog-chip-design-agents/actions/workflows/validate.yml)
 
 > **✅ Status: complete — all 16 plugins implemented (Phases 0–7).** Every domain ships detailed
-> stage rules, memory wiring, and the cross-domain `fix_request` loop, alongside one-step installers
-> (`install.sh` / `install.ps1`), multi-IDE export (`ides/`), QoR trend tracking
+> stage rules, memory wiring, and the cross-domain `fix_request` loop, alongside auto-detecting
+> installers (`npx`, `install.sh` / `install.ps1`) that target Claude Code plus Copilot / Gemini /
+> OpenCode / Codex, QoR trend tracking
 > (`tools/qor_trends.py`), an end-to-end test harness, and CI. See [`CHANGELOG.md`](CHANGELOG.md) for
 > the phase-by-phase delivery history, [`PLAN.md`](PLAN.md) for the design rationale and roadmap, and
 > [`FUTURE_WORK.md`](FUTURE_WORK.md) for the remaining deferred enhancements (deeper tool/PDK
@@ -49,34 +50,48 @@ All 16 plugins are fully implemented.
 
 ### Option A — npm (recommended, no clone)
 
-If you have Node.js (≥18), install and enable all 16 plugins with a single
-command — no `git clone` and no Python required. The installer copies each
-plugin into your Claude Code plugin cache and enables them in `settings.json`,
-then you restart Claude Code:
+If you have Node.js (≥18), run a single command — no `git clone` and no Python
+required. With no flags the installer **detects which AI coding agents you have
+installed** (Claude Code, OpenAI Codex, OpenCode, Gemini, GitHub Copilot), shows
+what it found and where each would write, and installs to them after a
+confirmation:
 
 ```bash
-npx analog-chip-design-agents
+npx analog-chip-design-agents            # detect installed agents + confirm
+npx analog-chip-design-agents --yes      # detect + install, no prompt (CI-friendly)
 ```
 
-Re-run the same command to pick up future updates. Works identically on macOS,
-Linux, and Windows (a single Node process copies plugins sequentially, so there
-is no concurrent-write contention on the cache directory). This currently
-installs the Claude Code plugins only; for other IDEs use Option B below.
+Detection treats an agent as installed if its CLI is on `PATH` **or** its config
+directory exists (e.g. `~/.claude`, `~/.codex`, `~/.config/opencode`,
+`~/.gemini`). For Claude Code it copies every plugin into your plugin cache and
+enables them in `settings.json`; for the others it generates the matching context
+files (see Option D). All five targets are handled natively in Node — no Python.
+
+To target a specific agent (or all of them) explicitly and skip detection:
+
+```bash
+npx analog-chip-design-agents --ide claude     # or codex | opencode | gemini | copilot | all
+npx analog-chip-design-agents --ide gemini --global
+```
+
+Re-run any of these to pick up future updates. Works identically on macOS, Linux,
+and Windows (a single Node process copies plugins sequentially, so there is no
+concurrent-write contention on the cache directory).
 
 ### Option B — Install script
 
-Install everything in one step with the bundled scripts (they read the plugin list from
-`.claude-plugin/marketplace.json`, so they stay in sync):
+Clone the repo and run one script. Like the npm installer, running it with no
+flags **auto-detects your installed agents** and installs to them after a
+confirmation (add `--yes` / `-y` on `install.sh`, or `-Yes` on `install.ps1`, to
+skip the prompt). The shell scripts require `python3`; for a Python-free install
+use the npm path (Option A).
 
 ```bash
-./install.sh            # register the marketplace + install all plugins
-./install.sh --list     # list the plugins that would be installed
-./install.sh analog-design-circuit analog-design-simulation   # install a subset
+bash install.sh          # macOS / Linux / Git Bash
 ```
 
 ```powershell
-./install.ps1           # Windows / PowerShell equivalent
-./install.ps1 -List
+.\install.ps1            # Windows / PowerShell
 ```
 
 ### Option C — Marketplace (selective install)
@@ -89,11 +104,22 @@ If you only need specific domains, install them from inside Claude Code:
 /plugin install analog-design-simulation@analog-chip-design-agents
 ```
 
-### Other AI assistants
+### Option D — Other AI assistants (Copilot / Gemini / OpenCode / Codex CLI)
 
-The same domain knowledge is exported to GitHub Copilot, Gemini, OpenCode, and Codex under
-[`ides/`](ides/) (generated from the plugin SKILLs by `tools/export_ides.py` — `plugins/` stays the
-source of truth). Regenerate after editing a SKILL with `python3 tools/export_ides.py`.
+These targets are auto-detected by Options A and B, but you can also install one
+explicitly. The npm installer and the shell scripts both support every target
+natively; run from your analog design project directory with `--ide`:
+
+```bash
+npx analog-chip-design-agents --ide copilot    # .github/instructions/ in your project
+npx analog-chip-design-agents --ide gemini     # GEMINI.md (or ~/GEMINI.md with --global)
+npx analog-chip-design-agents --ide opencode   # opencode.json; use /mode analog-<domain>
+npx analog-chip-design-agents --ide codex      # AGENTS.md (or ~/.codex/instructions.md with --global)
+```
+
+Domain knowledge is loaded from the plugin SKILLs at install time — `plugins/`
+stays the single source of truth, and the `ides/` templates supply each
+assistant's header/glob configuration. Re-run to pick up updates.
 
 ### QoR trends
 
@@ -136,9 +162,10 @@ analog-chip-design-agents/
 │       ├── .claude-plugin/plugin.json
 │       ├── agents/<domain>-orchestrator.md
 │       └── skills/<skill>/SKILL.md
-├── ides/                                ← multi-IDE export (Copilot/Gemini/OpenCode/Codex)
+├── bin/                                 ← npm installer (install.mjs) + agent detection (detect.mjs)
+├── ides/                                ← install-time templates (Copilot/Gemini/OpenCode/Codex)
 ├── memory/                              ← per-domain knowledge.md + experiences.jsonl
-├── tools/                               ← qor_trends.py, export_ides.py
+├── tools/                               ← qor_trends.py
 ├── docs/
 │   ├── design_state_schema.md           ← shared cross-orchestrator state schema
 │   └── templates/                       ← SKILL / orchestrator / plugin.json templates

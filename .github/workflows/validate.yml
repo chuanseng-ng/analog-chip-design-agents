@@ -216,13 +216,6 @@ jobs:
           print("Infrastructure memory integration OK")
           PYEOF
 
-      - name: Check ides/ exports are up to date
-        run: |
-          # The plugins/ SKILLs are the single source of truth; ides/ are
-          # generated mirrors. Fail if a SKILL changed without regenerating
-          # (fix locally with: python3 tools/export_ides.py).
-          python3 tools/export_ides.py --check
-
   tests:
     name: Python tool tests (pytest)
     runs-on: ubuntu-latest
