@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag/version to release (e.g. v0.6.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  # Reuse the full CI suite as a gate before publishing a release.
+  validate:
+    uses: ./.github/workflows/validate.yml
+
+  release:
+    name: Package & publish
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package marketplace artifact
+        run: |
+          set -euo pipefail
+          tag="${{ steps.ver.outputs.tag }}"
+          pkg="analog-chip-design-agents-${tag}"
+          mkdir -p "dist/${pkg}"
+          # Ship the installable surface: the registry, every plugin, shared docs,
+          # the installers, and the helper tools.
+          cp -r .claude-plugin plugins docs tools install.sh install.ps1 \
+                README.md LICENSE CHANGELOG.md "dist/${pkg}/"
+          tar -czf "dist/${pkg}.tar.gz" -C dist "${pkg}"
+          (cd dist && zip -rq "${pkg}.zip" "${pkg}")
+          ls -la dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: ${{ steps.ver.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
