@@ -27,6 +27,8 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
 - **ihp-sg13g2**: SiGe HBT front-ends enable very low NF — prefer for the first stage of low-noise/RF chains.
 - **sky130**: wide native-device Vt spread inflates offset/matching area — budget extra area for matched input pairs.
 - **gf180mcu**: 5 V devices give headroom for high-swing output drivers — allocate them to the linearity-critical back stage.
+- **freepdk45** (predictive/academic): generous 45 nm planar headroom — useful for exploring topologies before committing to a real PDK; results are not silicon-grade.
+- **asap7** (predictive/academic): 7 nm FinFET with **tight Vdd headroom** — favor low-stack/folded topologies and budget for quantized-fin device sizing; no statistical data for yield architecture.
 - Differential signalling doubles available swing and cancels even-order distortion — worth the area on linearity-limited chains.
 
 ## Metric Baselines

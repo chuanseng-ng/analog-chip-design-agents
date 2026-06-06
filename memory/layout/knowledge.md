@@ -28,6 +28,8 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
 - **sky130**: wide native-device Vt spread inflates matching area — budget extra dummies; use Magic + KLayout sky130 DRC decks.
 - **gf180mcu**: 5 V devices need thick-oxide layers and larger spacing — check enclosure rules on matched arrays.
 - **ihp-sg13g2**: SiGe HBT layout has dedicated device generators — prefer them over hand-drawn arrays.
+- **freepdk45** (predictive/academic): coarse single-patterning 45 nm rules — good for didactic/topology layout; not silicon-grade.
+- **asap7** (predictive/academic): 7 nm FinFET on a fixed fin/track grid with **multi-patterning (layer coloring)** on lower metals; snap devices to the fin pitch and the routing tracks, and keep colorable spacing — KLayout handles the coloring decks better than Magic.
 
 ## Metric Baselines
 

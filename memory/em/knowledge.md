@@ -41,6 +41,9 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
   lines and basic antennas.
 - **ihp-sg13g2**: the open RF/SiGe PDK with the thick-metal layers that make on-chip inductors and
   transformers worth EM-modeling in the first place.
+- **freepdk45 / asap7** (predictive/academic): not RF/EM targets — no characterized thick-metal
+  passive stack, so any EM solve uses predictive geometry only. Stick with `ihp-sg13g2` for
+  inductors/transformers.
 
 ## Metric Baselines
 

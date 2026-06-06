@@ -47,7 +47,7 @@ from post-layout / extraction).
 ## Supported EDA Tools
 
 ### Open-Source
-- **Magic** (`magic`) — layout editor + DRC/extraction; sky130/gf180mcu/ihp-sg13g2 support
+- **Magic** (`magic`) — layout editor + DRC/extraction; sky130/gf180mcu/ihp-sg13g2 support (freepdk45/asap7 predictive PDKs are usable but academic — asap7 FinFET/multi-patterning rules are best handled in KLayout)
 - **KLayout** (`klayout`) — layout viewer/editor, DRC/LVS decks, scripting (Python/Ruby)
 - **gdsfactory / gdstk** (`python -m gdsfactory`) — programmatic GDS generation
 - **ALIGN** / **MAGICAL** — analog layout automation (place & route)

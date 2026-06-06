@@ -35,6 +35,9 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
 
 - **ihp-sg13g2** (SiGe BiCMOS): the RF-capable open PDK — HBTs for LNA/PA/VCO; prefer it over
   sky130/gf180mcu for true RF blocks.
+- **freepdk45 / asap7** (predictive/academic): not RF PDKs — no HBTs and no characterized passive
+  stack; asap7's FinFETs can model mm-wave FET behavior only as predictive exploration. For real RF
+  blocks stay on `ihp-sg13g2`.
 - **Qucs-S vs Xyce HB**: Qucs-S has a friendlier HB front-end; Xyce HB scales better for large
   multi-tone problems. If both are present, prefer Xyce for many corners.
 - **Spectre RF / ADS / AWR MWO** (proprietary, detect-only): superior HB/Pnoise/load-pull

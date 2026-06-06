@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased] — feat/predictive-pdks: add freepdk45 + asap7
+
+### Added
+
+- **Predictive / academic PDK tier (`freepdk45`, `asap7`).** Added a distinct tier
+  in [`docs/pdk_support.md`](pdk_support.md) for `freepdk45` (NCSU 45 nm planar bulk)
+  and `asap7` (ASU/ARM 7 nm FinFET): predictive, educational, **non-manufacturable**,
+  not distributed via `open_pdks`, and not silicon-proven (limited corner/statistical
+  data). The two names are wired by name through the `## Supported Tools` sections of
+  the circuit-design, custom-layout, physical-verification, and infrastructure SKILLs
+  (plus the infrastructure orchestrator), the `constraints.pdk` comment in
+  [`design_state_schema.md`](design_state_schema.md), and per-domain
+  `memory/<domain>/knowledge.md` quirk notes (FinFET quantized-fin sizing, multi-Vt,
+  multi-patterning DRC, predictive PEX/EM/reliability caveats). Neither is an RF/EM
+  target — `ihp-sg13g2` remains the open RF/SiGe PDK. `design_state.schema.json` needs
+  no change (`pdk` is a free-form string).
+
 ## [Unreleased] — feat/agent-auto-detect: detect the AI agent platform and install natively
 
 ### Added

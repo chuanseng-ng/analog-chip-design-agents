@@ -36,6 +36,8 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
 - **sky130 / gf180mcu / ihp-sg13g2**: EM current-density limits are per metal layer and depend on
   temperature — confirm you load the correct `temp_c` limit table, not the room-temperature one.
 - **gf180mcu**: thick-metal top layers carry higher EM budgets — use them for power straps.
+- **freepdk45 / asap7** (predictive/academic): EM/IR/aging limits are predictive, not
+  silicon-qualified — report reliability margins as advisory and flag the PDK as non-manufacturable.
 - **Voltus / RedHawk** (proprietary, detect-only): consume the extracted parasitic + current
   profile; prefer them for full-chip EM/IR when detected. Open-source flow estimates per-net only.
 - **Calibre PERC** (proprietary, detect-only): topology-aware ESD/latch-up rule checks — superior

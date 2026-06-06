@@ -45,7 +45,7 @@ with explicit QoR gates and loop-back criteria enforced by the circuit-design or
 ## Supported EDA Tools
 
 ### Open-Source
-- **xschem** (`xschem`) — schematic capture and SPICE netlist export; de-facto open analog schematic tool, integrates with sky130/gf180mcu/ihp-sg13g2 PDKs
+- **xschem** (`xschem`) — schematic capture and SPICE netlist export; de-facto open analog schematic tool, integrates with sky130/gf180mcu/ihp-sg13g2 PDKs (and the predictive academic PDKs freepdk45/asap7)
 - **ngspice** (`ngspice`) — in-the-loop DC/AC sweeps during sizing
 - **Qucs-S** (`qucs-s`) — schematic + simulation front-end
 - **Hdl21 + VLSIR** (`python -m hdl21`) — programmatic (Python) analog schematic generation

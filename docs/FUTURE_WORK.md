@@ -19,14 +19,15 @@ Deferred enhancements for `analog-chip-design-agents`. Items here are intentiona
 [`pdk_support.md`](pdk_support.md), and the **ngspice** path is exercised for
 real: a PDK-independent deck (`examples/designs/ldo_pm/smoke/divider.sp`) runs through
 `plugins/infrastructure/tools/wrap-ngspice.sh` in `tests/test_tool_smoke.py` (skipped where
-the binary is absent, so CI stays green). All other tools remain **detect-only** and the
-validated open PDK set is still `sky130` / `gf180mcu` / `ihp-sg13g2`.
+the binary is absent, so CI stays green). All other tools remain **detect-only**. The
+validated open PDK set is `sky130` / `gf180mcu` / `ihp-sg13g2`, plus the predictive/academic
+tier `freepdk45` / `asap7` (wired by name, detect-only, non-manufacturable).
 
 ### The remaining work
 Promote more wrappers from *detect-only* to *smoke* (Xyce, Magic, KLayout, Netgen, OpenVAF,
-openEMS), drive at least one full open-source flow in-loop, and add/validate additional open
-PDKs beyond the current three. The "Adding coverage" recipe in `pdk_support.md` is the
-entry point.
+openEMS), drive at least one full open-source flow in-loop, and exercise the wired PDKs (the
+silicon-proven open set and the predictive `freepdk45`/`asap7` tier) in a real flow. The
+"Adding coverage" recipe in `pdk_support.md` is the entry point.
 
 ### Trade-offs
 - **For:** moves the marketplace from "knows the flow" toward "runs the flow" on open tooling;

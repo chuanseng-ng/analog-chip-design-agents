@@ -19,6 +19,9 @@ current host (versions and quirks do not transfer across machines). Distilled by
 ## Successful Flags / Install Notes
 
 - open_pdks: install `sky130`, `gf180mcu`, `ihp-sg13g2` with `--enable-...-pdk`; sets `PDK_ROOT`.
+- freepdk45 / asap7: predictive academic PDKs **not** shipped by open_pdks — fetch from their own
+  repos (FreePDK / ASAP7) and point `PDK_ROOT`+`PDK` (and any tech/deck paths) at the unpacked tree
+  before launching Magic/KLayout.
 - ngspice: `--enable-osdi --enable-xspice` for Verilog-A and mixed-signal code models.
 - Xyce: build with MPI for large Monte-Carlo throughput.
 - uv: prefer the standalone astral.sh installer; pip fallback only for custom/module Python.
