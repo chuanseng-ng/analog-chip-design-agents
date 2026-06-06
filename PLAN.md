@@ -404,6 +404,11 @@ Recommended build order — each phase is independently shippable and CI-validat
 - **Phase 5 — RF emphasis:** `rf-design`, `em-modeling`.
 - **Phase 6 — Integration & polish:** `ams-integration`, `ides/` exports,
   `install.sh`/`install.ps1`, `tools/qor_trends.py`, `release.yml`, FUTURE_WORK.
+- **Phase 7 — RF/EM cross-domain integration:** wire `rf-design` into the meta
+  `fix_request` loop as a producer (`route_to: circuit-design` for a device-level
+  spec miss, `route_to: em-modeling` for a passive shortfall) with `em-modeling` as
+  the servicer and `rf-design` as the re-validation target. Closes the sole
+  deferred RF/EM enhancement from Phase 5.
 
 ---
 

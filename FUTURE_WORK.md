@@ -5,45 +5,63 @@ intentionally **not** implemented yet; each notes the trade-off and the trigger 
 
 ---
 
-## Cross-domain RF/EM integration (deferred from Phase 5)
+## Cross-domain RF/EM integration (completed in Phase 7)
 
-**Status:** deferred. **Phase 5 chose the terminal/branch approach** for `rf-design` and
-`em-modeling`, mirroring the `architecture` and `characterization` precedent.
+**Status:** ✅ implemented in Phase 7 — see the [`CHANGELOG.md`](CHANGELOG.md) Phase 7 entry. This
+was the "Option 2" deferred enhancement. `rf-design` is now a cross-domain **producer**: after its
+stage-local caps (`topology_matching` / `harmonic_balance`) are exhausted it opens a `fix_request`
+routed to `circuit-design` (device-level spec miss) or `em-modeling` (passive shortfall — automated
+EM re-solve), instead of escalating to the user. `em-modeling` is the **servicer** for those passive
+re-solves, and the pipeline-orchestrator re-validates via `rf-design` (`created_by` →
+`rf-design-orchestrator`). The meta `created_by` (adds `rf-design-orchestrator`) and `route_to`
+(adds `em-modeling`) enums, the dispatch/participants wiring, and the CI fix_request fixture were all
+updated. User escalation is now reserved for a genuine `spec_gap` or a cross-domain-cap hit.
 
-### What is implemented today (Phase 5)
-- `rf-design` and `em-modeling` are **terminal/branch domains**: loop-backs are stage-local
-  (rf: spec/stability → `topology_matching`, convergence → `harmonic_balance`; em: passivity/fit →
-  `meshing`/`geometry_definition`), and a fundamental gap **escalates to the user**.
-- `em-modeling` → `rf-design` is a **data dependency**, not a repair loop: EM publishes the `em`
-  block (Touchstone + fitted lumped model) into `design_state.json`; RF reads it as a fixed passive
-  input. When RF finds a passive is the limiter, it escalates to the user *recommending* an EM
-  re-solve.
-- The meta `route_to` / `created_by` / `failure_class` enums are **unchanged** — RF/EM do not open
-  cross-domain `fix_request`s.
+---
 
-### The deferred alternative (Option 2)
-Wire RF (and the em↔rf coupling) into the meta cross-domain `fix_request` loop:
-- Add `rf-design` to the meta `fix_request` enums — `created_by` (RF as a producer), `route_to`
-  (e.g. `circuit-design` for an RF spec miss that needs device-level rework, and `em-modeling` so
-  an RF-detected passive shortfall opens an **automated** EM re-solve request), and any new
-  `failure_class` values needed.
-- Extend the pipeline-orchestrator dispatch/participants wiring (and the CI `VALID_FR_FAILURE` /
-  fixture checks) so RF spec misses auto-route to the right servicer and em↔rf re-solves run
-  closed-loop without a manual user step.
+## End-to-end validation harness
+
+**Status:** deferred. CI (`validate.yml`) today validates **structure and schema only** — plugin
+manifests, marketplace registry, SKILL/agent required sections, count checks, and the
+`design_state.json` fixtures. It never exercises a live multi-orchestrator run.
+
+### The deferred work
+Add a reference/example design walkthrough plus an end-to-end pipeline test that drives the
+orchestrator loop and asserts the `design_state.json` state transitions (e.g. an open `fix_request`
+→ servicer claim → `fixed` → re-validation → sign-off, with the iteration cap honoured). Wire it
+into CI as a regression gate.
 
 ### Trade-offs
-- **For:** fully automated RF closure (RF spec miss → circuit-design rework → re-validate) and
-  automated em↔rf re-solve loops, with no manual escalation in the common case.
-- **Against:** a larger, higher-risk diff touching `plugins/meta/skills/pipeline-orchestration/`,
-  the dispatch wiring, and CI enum/fixture checks; it diverges from how every other branch/terminal
-  domain (`architecture`, `characterization`) behaves today. RF's natural repair target
-  (`topology_matching`) is already an internal stage, so much of the benefit is only realized when
-  an RF miss genuinely needs device-level circuit-design rework.
+- **For:** real regression coverage of the closed-loop behaviour the marketplace promises, not just
+  the static specs; catches dispatch/enum/routing regressions the schema checks miss.
+- **Against:** requires fixtures (or lightweight stubs) for the orchestrator agents and a harness to
+  simulate state-file hand-offs; larger CI surface to maintain.
 
 ### Trigger for adopting it
-Pick this up when real RF runs show frequent RF→circuit-design rework or em↔rf re-solve cycles that
-are painful to drive by hand, **or** when a top-level mixed-signal flow needs RF blocks to close
-fully unattended inside the meta loop alongside the other domains.
+Pick this up when contributors need confidence that changes to the loop wiring don't silently break
+cross-domain repair, or before a tagged release where loop behaviour must be guaranteed.
+
+---
+
+## Deeper tool / PDK coverage
+
+**Status:** deferred. Each domain SKILL lists open-source and proprietary EDA tools, and the
+infrastructure domain detects/wraps them, but tools are largely **detect-only** and the validated
+open PDK set is `sky130` / `gf180mcu` / `ihp-sg13g2`.
+
+### The deferred work
+Exercise real EDA tool wrappers end-to-end (MCP servers, `wrap-*.sh`) on at least one open-source
+flow, and add/validate additional open PDKs beyond the current three.
+
+### Trade-offs
+- **For:** moves the marketplace from "knows the flow" toward "runs the flow" on open tooling; lets
+  a real silicon run close in-loop.
+- **Against:** heavy environment/tooling dependencies and PDK-specific quirks; CI cost and
+  flakiness risk if real tools are invoked in the pipeline.
+
+### Trigger for adopting it
+Pick this up when a real design needs a specific open tool/PDK closed in-loop, or when there is
+appetite to maintain tool-execution CI alongside the spec validation.
 
 ---
 
@@ -58,4 +76,6 @@ Phase 6 is implemented — see the [`CHANGELOG.md`](CHANGELOG.md) Phase 6 entry:
   `tools/export_ides.py`), `install.sh` / `install.ps1`, `tools/qor_trends.py`, and
   `.github/workflows/release.yml` — all delivered per `PLAN.md` §12 Phase 6.
 
-The RF/EM cross-domain integration item above remains the sole deferred enhancement.
+The RF/EM cross-domain integration that was deferred here is now **complete** (Phase 7). The
+remaining deferred enhancements are the **end-to-end validation harness** and **deeper tool / PDK
+coverage** items above.

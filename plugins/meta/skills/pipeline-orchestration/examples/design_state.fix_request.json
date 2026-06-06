@@ -62,6 +62,59 @@
           "note": "Compensation re-tuned; PM closed"
         }
       ]
+    },
+    {
+      "id": "fr_ps20260310_090000_20260310_101500_002",
+      "created_at": "2026-03-10T10:15:00Z",
+      "updated_at": "2026-03-10T11:10:00Z",
+      "created_by": "rf-design-orchestrator",
+      "failure_class": "spec_violation",
+      "retry_strategy": "refine",
+      "analysis_name": "noise_linearity",
+      "spec_or_metric": "nf_db",
+      "corner": "ss_125C_vmin",
+      "waveform_path": "rf/pnoise/lna_nf_ss_125C_vmin.summary",
+      "log_path": "rf/logs/lna_noise_linearity_ss_125C_vmin.log",
+      "suspected_circuit": {
+        "block": "lna_input_stage",
+        "device": "L_match (input matching inductor)",
+        "netlist": "netlist/lna_cs.spice",
+        "schematic_ref": "sch/lna_cs.sch"
+      },
+      "summary": "NF 2.9 dB at SS/125C/Vmin — over 2.5 dB target; limiter is input inductor Q",
+      "expected_behavior": "nf_db <= 2.5 dB across corners per rf_specs",
+      "observed_behavior": "NF 2.9 dB; degradation traced to L_match Q ~ 8 from design_state.em — passive-limited, not circuit-limited",
+      "session_id": "ps20260310_090000",
+      "status": "fixed",
+      "circuit_response": {
+        "fixed_at": "2026-03-10T11:10:00Z",
+        "diff_summary": "Re-solved the input matching inductor (wider top-metal turns, increased spacing) raising Q from 8 to 14 and SRF above band; refit the lumped model. NF now 2.3 dB at the failing corner.",
+        "files_changed": ["em/touchstone/L_match.s2p", "em/models/L_match_fitted.spice"],
+        "commit_ref": null
+      },
+      "history": [
+        {
+          "timestamp": "2026-03-10T10:15:00Z",
+          "agent": "rf-design-orchestrator",
+          "from_status": null,
+          "to_status": "open",
+          "note": "NF over target after topology_matching cap; limiter = passive Q — routed to em-modeling"
+        },
+        {
+          "timestamp": "2026-03-10T10:30:00Z",
+          "agent": "em-modeling-orchestrator",
+          "from_status": "open",
+          "to_status": "claimed",
+          "note": "Claimed by pipeline-orchestrator dispatch (route_to: em-modeling)"
+        },
+        {
+          "timestamp": "2026-03-10T11:10:00Z",
+          "agent": "em-modeling-orchestrator",
+          "from_status": "claimed",
+          "to_status": "fixed",
+          "note": "Higher-Q inductor re-solved and republished; NF re-validated by rf-design"
+        }
+      ]
     }
   ],
   "history": [

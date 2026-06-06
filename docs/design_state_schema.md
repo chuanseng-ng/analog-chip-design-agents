@@ -106,21 +106,26 @@ orchestrator before circuit design begins, and circuit-design reads
 flows `layout → physical_verification → pex → post_layout`, and the sign-off-depth tier continues
 `reliability → char` on the extracted netlist (reliability EM/IR/ESD/latch-up/aging, then
 characterization of the `.lib` + behavioral views). AMS verification, physical-verification,
-post-layout, and reliability open `fix_request`s with an optional `route_to` hint
-(`circuit-design` | `behavioral-modeling` | `custom-layout`) so the pipeline-orchestrator
-dispatches the right servicer — e.g. a DRC/LVS fault (`failure_class: drc_lvs`/`connectivity`)
-routes to `custom-layout`, a parasitic-induced post-layout spec loss to `custom-layout` or
-`circuit-design`, an EM/IR reliability fault to `custom-layout` and an ESD/aging shortfall to
-`circuit-design`. Characterization is a terminal consumer: its loop-backs are stage-local and it
-escalates to the user rather than opening a cross-domain `fix_request`.
+post-layout, reliability, and rf-design open `fix_request`s with an optional `route_to` hint
+(`circuit-design` | `behavioral-modeling` | `custom-layout` | `em-modeling`) so the
+pipeline-orchestrator dispatches the right servicer — e.g. a DRC/LVS fault
+(`failure_class: drc_lvs`/`connectivity`) routes to `custom-layout`, a parasitic-induced post-layout
+spec loss to `custom-layout` or `circuit-design`, an EM/IR reliability fault to `custom-layout` and
+an ESD/aging shortfall to `circuit-design`, and an RF passive shortfall to `em-modeling`.
+Characterization is a terminal consumer: its loop-backs are stage-local and it escalates to the user
+rather than opening a cross-domain `fix_request`.
 
-The RF emphasis tier (`em → rf`) is a parallel branch: `em-modeling` and `rf-design` are
-**terminal/branch domains** with stage-local loop-backs (em: passivity/fit → `meshing`/
-`geometry_definition`; rf: spec/stability → `topology_matching`, convergence → `harmonic_balance`).
-`em-modeling` writes the `em` block (Touchstone + fitted lumped model) which `rf-design` reads as a
-**fixed passive data dependency**. If RF finds a passive is the limiter it escalates to the user
-recommending an EM re-solve, rather than opening a cross-domain `fix_request`. (Wiring RF/EM into
-the `fix_request` loop is a deferred enhancement — see `FUTURE_WORK.md`.)
+The RF emphasis tier (`em → rf`) is wired into the cross-domain loop. `em-modeling` writes the `em`
+block (Touchstone + fitted lumped model) which `rf-design` reads as a passive data dependency. RF
+loop-backs are stage-local first (spec/stability → `topology_matching`, convergence →
+`harmonic_balance`; em: passivity/fit → `meshing`/`geometry_definition`); when a stage-local cap is
+exhausted, `rf-design` **opens** a `fix_request` (`created_by: rf-design-orchestrator`,
+`failure_class: spec_violation`): `route_to: circuit-design` for a device-level spec miss, or
+`route_to: em-modeling` when an on-chip passive (low Q / under-spec SRF) is the limiter — the latter
+triggering an **automated** EM re-solve. `em-modeling` is the **servicer** for those entries
+(claim → re-solve → republish the `em` block → `fixed` with a `circuit_response`); it never opens a
+`fix_request` itself. Re-validation routes back to `rf-design-orchestrator` (selected by
+`created_by`).
 
 The mixed-signal top domain (`ams_integration`) is **downstream of every block**: it qualifies the
 signed-off IP, assembles the top, and runs chip-level AMS sim. It is wired into the cross-domain
