@@ -222,3 +222,22 @@ jobs:
           # generated mirrors. Fail if a SKILL changed without regenerating
           # (fix locally with: python3 tools/export_ides.py).
           python3 tools/export_ides.py --check
+
+  tests:
+    name: Python tool tests (pytest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: pip install --quiet pytest jsonschema
+
+      - name: Run pytest
+        run: python3 -m pytest tests/ -q
