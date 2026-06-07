@@ -41,7 +41,7 @@ Each of the 16 orchestrators follows the same protocol (see the `## Memory` sect
    and `signoff_achieved: false`. On final sign-off, set `signoff_achieved: true`. The same
    `run_id` line is overwritten, never duplicated.
 
-```
+```text
                 read knowledge.md ──► run flow ──► upsert experiences.jsonl
                        ▲                                      │
                        │            memory-keeper skill       │
