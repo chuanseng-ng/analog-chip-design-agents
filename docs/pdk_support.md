@@ -24,6 +24,22 @@ This page tracks how far each PDK and EDA tool is exercised by the marketplace, 
 sections and the `constraints.pdk` field. None of the three is exercised by a real tape-out flow
 in CI yet (see [`FUTURE_WORK.md`](FUTURE_WORK.md) → *Deeper tool / PDK coverage*).
 
+## Predictive / academic PDKs
+
+These are wired by name exactly like the open PDKs above, but they are **predictive,
+educational, and non-manufacturable**: they carry no silicon-proven status, ship little or
+no foundry corner/statistical data, and are **not** distributed via `open_pdks` (each comes
+from its own academic distribution). Treat them as targets for topology, methodology, and
+flow exploration — **not** for tape-out QoR or trustworthy PEX/EM/reliability numbers.
+
+| PDK | Status | Notes |
+|-----|--------|-------|
+| `freepdk45` | predictive (detect-only) | NCSU 45 nm planar bulk CMOS; academic/non-manufacturable. BSIM4, typical-corner-oriented models; install from the FreePDK distribution, not `open_pdks`. |
+| `asap7` | predictive (detect-only) | ASU/ARM 7 nm FinFET; academic/non-manufacturable. BSIM-CMG, quantized fin widths, multi-Vt, multi-patterning DRC; no statistical/MC data. Install from the ASAP7 repo, not `open_pdks`. |
+
+Neither is an RF/EM target (no HBTs, no characterized thick-metal passive stack) — keep
+`ihp-sg13g2` for true RF/EM blocks.
+
 ## Open-source tools
 
 | Tool | Wrapper | Status |

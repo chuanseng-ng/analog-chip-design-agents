@@ -33,6 +33,9 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
 
 - **sky130 / gf180mcu / ihp-sg13g2**: confirm the device model corner names map to the `.lib`
   `operating_conditions` you emit; mismatched corner labels silently de-correlate timing/power.
+- **freepdk45 / asap7** (predictive/academic): corner/model data is predictive and often
+  typical-only — characterize what exists, label the `.lib` as predictive, and do not present the
+  results as silicon-qualified timing/power.
 - **Liberate / SiliconSmart / Solido** (proprietary, detect-only): consume the same testbench
   harness and emit NLDM/CCS directly; prefer them for large arc counts when detected. The
   open-source flow (ngspice/Xyce + Python writers) covers NLDM and basic CCS.

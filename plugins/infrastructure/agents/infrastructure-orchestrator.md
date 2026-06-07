@@ -30,6 +30,7 @@ tool_discovery → module_discovery → tool_installation → wrapper_deployment
 - OpenVAF (`openvaf`), ADMS (`admsXml`), openEMS (`openEMS`), FastHenry/FastCap, gmsh
 - PySpice, scikit-rf (`skrf`), cocotb, Hdl21, gdstk, Verilator, Icarus, GTKWave, uv
 - open_pdks (sky130 / gf180mcu / ihp-sg13g2)
+- freepdk45 / asap7 (predictive academic PDKs — from their own distributions, not open_pdks)
 
 ### Proprietary (detect only — never install)
 - Cadence Virtuoso / Spectre / Spectre RF / Xcelium AMS / Quantus / Pegasus / Liberate

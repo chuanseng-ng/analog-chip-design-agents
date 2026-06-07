@@ -62,7 +62,7 @@ documented per-skill defaults when a key is absent.
 
     "yield":   { "target_sigma": 3, "mc_samples": 1000 },
     "area_um2": 50000,
-    "pdk": "sky130"                     // sky130 | gf180mcu | ihp-sg13g2 | <proprietary, detect-only>
+    "pdk": "sky130"                     // sky130 | gf180mcu | ihp-sg13g2 | freepdk45 (predictive) | asap7 (predictive) | <proprietary, detect-only>
   }
 }
 ```

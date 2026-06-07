@@ -27,6 +27,7 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
 - **Magic ext2spice**: set the correct `extresist`/`ext2spice` options per PDK; sky130 needs the sky130 extraction tech file.
 - **KLayout PEX**: R is reliable, C is limited — escalate critical coupling to a field solver.
 - **gf180mcu / ihp-sg13g2**: confirm the per-layer R/C tables match the foundry corner before trusting accuracy vs golden.
+- **freepdk45 / asap7** (predictive/academic): R/C tables are **predictive, not foundry-calibrated** — use PEX for relative/methodology comparisons, never as silicon-accurate parasitics. asap7's multi-patterned metals make coupling especially approximate.
 
 ## Metric Baselines
 

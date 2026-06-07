@@ -26,6 +26,8 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
 - **sky130**: native devices have wide Vt spread — budget extra matching area; use `sky130_fd_pr` model corners (tt/ss/ff/sf/fs).
 - **gf180mcu**: 5 V devices need explicit thick-oxide selection; check Vds ratings against supply.
 - **ihp-sg13g2**: SiGe HBTs available — prefer for low-noise/RF front-ends.
+- **freepdk45** (predictive/academic): NCSU 45 nm planar bulk, BSIM4; models are typical-corner-oriented, so treat ss/ff/sf/fs sizing margins as indicative, not silicon-grade.
+- **asap7** (predictive/academic): 7 nm FinFET, BSIM-CMG; device widths are **quantized to an integer fin count** (size via fin number, not continuous W) and multiple Vt flavors (SLVT/LVT/RVT) exist — pick Vt deliberately. Low Vdd leaves little headroom for stacked devices.
 
 ## Metric Baselines
 

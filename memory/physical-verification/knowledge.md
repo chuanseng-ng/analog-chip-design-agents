@@ -27,6 +27,8 @@ Seeded known patterns. The `memory-keeper` skill merges new entries from
 - **sky130**: use the official `sky130_fd_pr` DRC/LVS decks; some recommended (non-blocking) rules fire on dense fill.
 - **gf180mcu**: thick-oxide 5 V devices have distinct spacing/enclosure rules — verify the correct device layer is selected.
 - **ihp-sg13g2**: HBT and MIM-cap layers have dedicated LVS device recognition — confirm the device extraction rules are loaded.
+- **freepdk45** (predictive/academic): classic single-patterning DRC deck; sign-off here is methodology validation only — non-manufacturable.
+- **asap7** (predictive/academic): 7 nm FinFET decks include **multi-patterning/coloring and density checks**; LVS must recognize FinFET devices by fin count. Run KLayout for the coloring rules; treat results as predictive.
 
 ## Metric Baselines
 

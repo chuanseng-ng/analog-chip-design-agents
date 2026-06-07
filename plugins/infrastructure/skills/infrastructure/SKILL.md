@@ -52,6 +52,7 @@ validate the environment before any domain orchestrator begins work.
 - **Verilator** (`verilator`) / **Icarus Verilog** (`iverilog`) — digital + RNM co-sim
 - **GTKWave** (`gtkwave`) — waveform viewer
 - **open_pdks** — sky130 / gf180mcu / ihp-sg13g2 PDK installer
+- **freepdk45 / asap7** — predictive academic PDKs (NCSU 45 nm / ASU-ARM 7 nm FinFET); installed from their own distributions, **not** via `open_pdks`; detect-only, non-manufacturable
 - **uv** (`uv`) — fast Python package/project manager (required for PySpice/cocotb installs)
 
 ### Proprietary (detect only — never install)

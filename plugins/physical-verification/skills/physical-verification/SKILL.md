@@ -47,7 +47,7 @@ QoR gates. On a DRC or LVS failure the layout cannot self-resolve, this domain o
 ### Open-Source
 - **Magic** (`magic`) — DRC and device extraction for LVS
 - **Netgen** (`netgen`) — LVS (layout-vs-schematic netlist comparison)
-- **KLayout** (`klayout`) — DRC / LVS decks (sky130/gf180mcu/ihp-sg13g2), antenna checks
+- **KLayout** (`klayout`) — DRC / LVS decks (sky130/gf180mcu/ihp-sg13g2; predictive freepdk45/asap7, the latter with multi-patterning/coloring rules), antenna checks
 
 ### Proprietary (detect-only — never installed)
 - **Siemens Calibre nmDRC / nmLVS** (`calibre`) — industry DRC/LVS sign-off
