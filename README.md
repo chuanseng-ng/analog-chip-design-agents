@@ -53,11 +53,29 @@ and QoR-trend tracking are all covered in **[docs/installation.md](docs/installa
 |-----|--------------|
 | [docs/installation.md](docs/installation.md) | Every install path, all supported agents, QoR trends |
 | [docs/architecture.md](docs/architecture.md) | How the Skill + Orchestrator pattern works, repo structure |
+| [docs/memory_system.md](docs/memory_system.md) | Two-tier per-domain memory: tiers, orchestrator protocol, distilling, QoR trends |
 | [docs/design_state_schema.md](docs/design_state_schema.md) | Shared cross-orchestrator `design_state.json` schema |
 | [docs/pdk_support.md](docs/pdk_support.md) | PDK / tool coverage matrix (detect-only vs run-in-loop) |
 | [docs/PLAN.md](docs/PLAN.md) | Design rationale, end-to-end pipeline, phased roadmap |
 | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Phase-by-phase delivery history |
 | [docs/FUTURE_WORK.md](docs/FUTURE_WORK.md) | Deferred enhancements (deeper tool / PDK coverage) |
+
+---
+
+## Memory System
+
+Each domain orchestrator reads from and writes to a two-tier persistent memory store under
+`memory/`:
+
+- **`memory/<domain>/knowledge.md`** — distilled summaries (failure patterns, tool flags,
+  PDK/device quirks) read by every orchestrator at session start.
+- **`memory/<domain>/experiences.jsonl`** — run records upserted per stage as each run
+  progresses to sign-off or escalation.
+
+Distil accumulated records back into `knowledge.md` with the `memory-keeper` skill, and track
+QoR metrics across runs with `tools/qor_trends.py`. See
+**[docs/memory_system.md](docs/memory_system.md)** for the overview and
+**[memory/README.md](memory/README.md)** for the full record schema and per-domain fields.
 
 ---
 
