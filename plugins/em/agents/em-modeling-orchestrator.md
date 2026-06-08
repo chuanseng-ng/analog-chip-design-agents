@@ -119,18 +119,28 @@ frequency/metric and a recommendation (re-mesh, change geometry, or relax the ba
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Read `memory/em/knowledge.md` (meshing recipes, passivity/fit fixes, de-embedding patterns,
-solver-selection rules, PDK/tool quirks) and `memory/em/run_state.md` (resume) before `em_setup`.
+Read `<MEM>/em/knowledge.md` (meshing recipes, passivity/fit fixes, de-embedding patterns,
+solver-selection rules, PDK/tool quirks) and `<MEM>/em/run_state.md` (resume) before `em_setup`.
 
 ### Write: run state (first action)
-Write `memory/em/run_state.md` with `run_id` (`em_<YYYYMMDD>_<HHMMSS>`), `design_name`, `pdk`,
+Write `<MEM>/em/run_state.md` with `run_id` (`em_<YYYYMMDD>_<HHMMSS>`), `design_name`, `pdk`,
 `tool`, `start_time`, `last_stage`. Update `last_stage` to the completed stage name only after each
 stage finishes successfully (do not advance it on a failure or loop-back, so resume restarts from
 the last good stage).
 
 ### Write: per-stage
-Upsert one JSON line in `memory/em/experiences.jsonl` keyed by `run_id`:
+Upsert one JSON line in `<MEM>/em/experiences.jsonl` keyed by `run_id`:
 ```json
 {
   "run_id": "<from state>",
@@ -158,7 +168,7 @@ Create the file and parent directories if they do not exist.
 ## Design State
 
 ### Read (session start)
-After `memory/em/knowledge.md`, read `design_state.json`. Extract `constraints` (pdk, corners),
+After `<MEM>/em/knowledge.md`, read `design_state.json`. Extract `constraints` (pdk, corners),
 `design_state.layout.gds` (geometry source), `pipeline_config`, and (in re-solve mode) the
 indicated stage. Treat missing keys as null.
 

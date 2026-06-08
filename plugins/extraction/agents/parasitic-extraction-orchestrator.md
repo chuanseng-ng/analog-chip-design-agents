@@ -79,16 +79,26 @@ terminate with `decision: escalate` so the pipeline-orchestrator dispatches cust
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Read `memory/extraction/knowledge.md` (extraction-deck settings, coupling-net recipes,
-back-annotation pitfalls) and `memory/extraction/run_state.md` (resume) before `extraction_setup`.
+Read `<MEM>/extraction/knowledge.md` (extraction-deck settings, coupling-net recipes,
+back-annotation pitfalls) and `<MEM>/extraction/run_state.md` (resume) before `extraction_setup`.
 
 ### Write: run state (first action)
-Write `memory/extraction/run_state.md` with `run_id` (`extraction_<YYYYMMDD>_<HHMMSS>`),
+Write `<MEM>/extraction/run_state.md` with `run_id` (`extraction_<YYYYMMDD>_<HHMMSS>`),
 `design_name`, `pdk`, `tool`, `start_time`, `last_stage`. Update `last_stage` after each stage.
 
 ### Write: per-stage
-Upsert one JSON line in `memory/extraction/experiences.jsonl` keyed by `run_id`:
+Upsert one JSON line in `<MEM>/extraction/experiences.jsonl` keyed by `run_id`:
 ```json
 {
   "run_id": "<from state>",
@@ -116,7 +126,7 @@ Set `signoff_achieved: true` only when pex_signoff passes. Overwrite the line fo
 ## Design State
 
 ### Read (session start)
-After `memory/extraction/knowledge.md`, read `design_state.json`. Extract `constraints`,
+After `<MEM>/extraction/knowledge.md`, read `design_state.json`. Extract `constraints`,
 `layout` (gds), `physical_verification` (signoff gate), `pipeline_config`, and
 `approved_checkpoints`. Treat missing keys as null.
 

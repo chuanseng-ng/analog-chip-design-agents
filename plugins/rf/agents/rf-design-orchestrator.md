@@ -126,16 +126,26 @@ user can decide (relax the spec, raise the cap, or accept current QoR).
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Read `memory/rf/knowledge.md` (matching/stability fixes, HB convergence recipes, phase-noise and
-load-pull patterns, PDK/tool quirks) and `memory/rf/run_state.md` (resume) before `rf_spec`.
+Read `<MEM>/rf/knowledge.md` (matching/stability fixes, HB convergence recipes, phase-noise and
+load-pull patterns, PDK/tool quirks) and `<MEM>/rf/run_state.md` (resume) before `rf_spec`.
 
 ### Write: run state (first action)
-Write `memory/rf/run_state.md` with `run_id` (`rf_<YYYYMMDD>_<HHMMSS>`), `design_name`, `pdk`,
+Write `<MEM>/rf/run_state.md` with `run_id` (`rf_<YYYYMMDD>_<HHMMSS>`), `design_name`, `pdk`,
 `tool`, `start_time`, `last_stage`. Update `last_stage` after each stage.
 
 ### Write: per-stage
-Upsert one JSON line in `memory/rf/experiences.jsonl` keyed by `run_id`:
+Upsert one JSON line in `<MEM>/rf/experiences.jsonl` keyed by `run_id`:
 ```json
 {
   "run_id": "<from state>",
@@ -164,7 +174,7 @@ Create the file and parent directories if they do not exist.
 ## Design State
 
 ### Read (session start)
-After `memory/rf/knowledge.md`, read `design_state.json`. Extract `constraints` (rf_specs, specs,
+After `<MEM>/rf/knowledge.md`, read `design_state.json`. Extract `constraints` (rf_specs, specs,
 supply, pdk, corners), `design_state.em` (`touchstone` + `fitted_model` — the passive input),
 `pipeline_config`, and (in re-run mode) the target `fix_requests[]`/serviced em-solve reference.
 Treat missing keys as null.

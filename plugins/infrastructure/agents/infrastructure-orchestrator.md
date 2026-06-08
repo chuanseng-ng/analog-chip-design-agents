@@ -77,13 +77,23 @@ tool_discovery → module_discovery → tool_installation → wrapper_deployment
 5. On completion: confirm `tool-manifest.json` written, wrappers executable, `mcp-adapter.py` + `mcp-session-adapter.py` present, and all MCP snippets written with resolved absolute paths and printed.
 6. Per-stage trace: after each stage, append one `history[]` entry to `design_state.json` (10-field schema); derive `retry_strategy` from `failure_class` (`none ⇒ none`). `constraint_ref: null` (infrastructure is constraint-independent).
 7. Checkpoint gate (at `environment_validation` only): if `"environment_validation"` is in `pipeline_config.checkpoints` and not approved, set `pending_approval.type="checkpoint"`, append an `await_approval` history entry, print the gate message, and halt without setting `environment.signoff=true`.
-8. Infrastructure memory (opt-in — default off): persist to `memory/infrastructure/` only when `design_state.pipeline_config.track_infrastructure == true` or invoked with `--track-memory`; otherwise skip all `memory/infrastructure/` I/O.
+8. Infrastructure memory (opt-in — default off): persist to `<MEM>/infrastructure/` only when `design_state.pipeline_config.track_infrastructure == true` or invoked with `--track-memory`; otherwise skip all `<MEM>/infrastructure/` I/O.
 
 ## Infrastructure Memory (opt-in)
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 Enabled when `design_state.pipeline_config.track_infrastructure == true` or invoked with
 `--track-memory`. When enabled, after `environment_validation` upsert one environment-keyed
-record (create-or-replace by `run_id`) into `memory/infrastructure/experiences.jsonl`:
+record (create-or-replace by `run_id`) into `<MEM>/infrastructure/experiences.jsonl`:
 ```json
 {
   "run_id": "infrastructure_<YYYYMMDD>_<HHMMSS>",

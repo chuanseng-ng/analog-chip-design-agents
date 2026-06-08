@@ -16,7 +16,28 @@ allowed-tools: Read, Write, Bash
 
 Invoke as `/analog-design-infrastructure:memory-keeper --domain <domain>` (or `--all`).
 This skill runs the distillation helper, reviews the candidate patterns, and updates the
-relevant `memory/<domain>/knowledge.md` — it does **not** spawn an orchestrator.
+relevant `<domain>/knowledge.md` under the resolved memory root — it does **not** spawn an
+orchestrator. Pass `--init` (runs `memory_root.py --init`) to resolve and seed the central
+memory root and migrate any repo-local runtime data, without distilling.
+
+## Memory Root Resolution
+
+Memory does **not** live at a fixed relative `memory/` path. The active root is resolved by
+`memory_root.py` (the single source of truth that `distill.py` and `tools/qor_trends.py` import),
+in this priority order:
+
+1. an explicit `--memory-root PATH` argument
+2. the `$CHIP_DESIGN_MEMORY_ROOT` environment variable
+3. the central default `${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`
+   (Windows: `%LOCALAPPDATA%\chip-design-agents\analog\memory`)
+4. the in-repo `memory/` tree as a seed fallback (used only if the central root is unwritable)
+
+The in-repo `memory/` tree is the version-controlled **seed**: on first resolution each
+`<domain>/knowledge.md` is copied into the central root if absent (never overwriting accumulated
+data; runtime `experiences.jsonl`/`run_state.md` are never seeded). Orchestrators resolve this same
+root at session start and use it as `<MEM>` for every read/write. Print it with
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py` (add `--init` to seed +
+migrate + report). Per-project scoping: `export CHIP_DESIGN_MEMORY_ROOT="$PWD/memory"`.
 
 ## Purpose
 

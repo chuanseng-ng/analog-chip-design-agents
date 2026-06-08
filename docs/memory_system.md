@@ -1,11 +1,27 @@
 # Memory System
 
-Every domain orchestrator reads from and writes to a **two-tier, file-based memory store**
-under [`memory/`](../memory). No external database or service is required — memory is plain
-files committed alongside the repo, so learnings persist across sessions and machines.
+Every domain orchestrator reads from and writes to a **two-tier, file-based memory store**.
+No external database or service is required. The in-repo [`memory/`](../memory) tree is the
+**version-controlled seed**; live memory lives in a **central, machine-level root** so learnings
+persist across sessions and are shared by every working directory on the machine — not just the
+directory the agent happened to launch from.
 
 This page is the reader's overview. For the exact record schema, per-domain `key_metrics`
 fields, and the atomic-write protocol, see [`memory/README.md`](../memory/README.md).
+
+## Memory Root Resolution
+
+The active root is resolved by
+[`plugins/infrastructure/skills/memory-keeper/memory_root.py`](../plugins/infrastructure/skills/memory-keeper/memory_root.py)
+— the single source of truth shared by orchestrators, `distill.py`, and `tools/qor_trends.py` —
+in priority order: (1) an explicit `--memory-root`/`--memory-dir`, (2) `$CHIP_DESIGN_MEMORY_ROOT`,
+(3) the central default `${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`
+(`analog` and `digital` use separate subdirs), (4) the in-repo `memory/` seed as a fallback. On
+first resolution each `<domain>/knowledge.md` seed is copied into the central root if absent
+(accumulated data is never overwritten; runtime files are never seeded). Print the resolved path
+with `python3 plugins/infrastructure/skills/memory-keeper/memory_root.py` (add `--init` to seed +
+migrate). Below, `<MEM>` denotes the resolved root. Per-project scoping:
+`export CHIP_DESIGN_MEMORY_ROOT="$PWD/memory"`.
 
 ---
 
@@ -13,14 +29,14 @@ fields, and the atomic-write protocol, see [`memory/README.md`](../memory/README
 
 | Tier | File | Format | Role |
 |------|------|--------|------|
-| **Tier 1 — Experience log** | `memory/<domain>/experiences.jsonl` | JSONL, one record per run | Machine-parseable run history. Upserted (overwritten by `run_id`) as each stage completes; grows over time; never hand-edited. |
-| **Tier 2 — Distilled knowledge** | `memory/<domain>/knowledge.md` | Markdown | Human- and agent-readable summary of failure patterns, successful tool flags, and PDK/device quirks. Seeded per domain and read by every orchestrator at session start. |
+| **Tier 1 — Experience log** | `<MEM>/<domain>/experiences.jsonl` | JSONL, one record per run | Machine-parseable run history. Upserted (overwritten by `run_id`) as each stage completes; grows over time; never hand-edited. |
+| **Tier 2 — Distilled knowledge** | `<MEM>/<domain>/knowledge.md` | Markdown | Human- and agent-readable summary of failure patterns, successful tool flags, and PDK/device quirks. Seeded per domain and read by every orchestrator at session start. |
 
 Tier 1 is the **append-only evidence**; Tier 2 is the **curated wisdom** distilled from it.
 The two are linked by the `memory-keeper` skill, which periodically folds new patterns from
 the JSONL log into `knowledge.md`.
 
-A third helper file, `memory/<domain>/run_state.md`, records the active run's identity
+A third helper file, `<MEM>/<domain>/run_state.md`, records the active run's identity
 (`run_id`, `design_name`, `pdk`, `tool`, `start_time`, `last_stage`) so an interrupted run
 can be resumed.
 
@@ -31,13 +47,13 @@ can be resumed.
 Each of the 16 orchestrators follows the same protocol (see the `## Memory` section in any
 `plugins/<domain>/agents/<domain>-orchestrator.md`):
 
-1. **Session start — read.** Load `memory/<domain>/knowledge.md` (Tier 2) for known pitfalls
+1. **Session start — read.** Load `<MEM>/<domain>/knowledge.md` (Tier 2) for known pitfalls
    and tool flags, then `run_state.md` to resume an interrupted run if present. The shared
    `design_state.json` is read immediately after.
-2. **First action — write run state.** Create/update `memory/<domain>/run_state.md` with the
+2. **First action — write run state.** Create/update `<MEM>/<domain>/run_state.md` with the
    new `run_id` and metadata; refresh `last_stage` after each stage.
 3. **Per stage — upsert experience.** Write one JSON line to
-   `memory/<domain>/experiences.jsonl` keyed by `run_id`, with the metrics available so far
+   `<MEM>/<domain>/experiences.jsonl` keyed by `run_id`, with the metrics available so far
    and `signoff_achieved: false`. On final sign-off, set `signoff_achieved: true`. The same
    `run_id` line is overwritten, never duplicated.
 
