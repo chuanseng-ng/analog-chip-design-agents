@@ -88,10 +88,11 @@ def resolve_memory_root(explicit: str | None = None, *, create: bool = True,
                         seed: bool = True) -> Path:
     """Resolve the active memory root following the documented order."""
     if explicit:
-        root = Path(explicit).expanduser()
-    else:
-        env = os.environ.get("CHIP_DESIGN_MEMORY_ROOT")
-        root = Path(env).expanduser() if env else central_root()
+        # An explicit path is honored verbatim and never auto-created or seeded,
+        # so callers that treat a missing root as "not found" keep working.
+        return Path(explicit).expanduser()
+    env = os.environ.get("CHIP_DESIGN_MEMORY_ROOT")
+    root = Path(env).expanduser() if env else central_root()
     if create:
         try:
             root.mkdir(parents=True, exist_ok=True)
