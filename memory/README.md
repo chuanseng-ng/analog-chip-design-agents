@@ -1,8 +1,39 @@
 # Agent Memory System
 
-Persistent, file-based memory for the analog/mixed-signal + RF design orchestrators.
-Agents read it at session start, write a run-state file before the first stage, and upsert
-an experience record after each stage completes — no external infrastructure required.
+This directory is the **version-controlled seed** for persistent, file-based memory used by the
+analog/mixed-signal + RF design orchestrators. Live memory does **not** live here at runtime — it
+lives in a central, machine-level root so any working directory shares the same accumulated
+knowledge. Agents read memory at session start, write a run-state file before the first stage, and
+upsert an experience record after each stage completes — no external infrastructure required.
+
+## Where Memory Lives (Resolution)
+
+The active memory root is resolved by
+[`plugins/infrastructure/skills/memory-keeper/memory_root.py`](../plugins/infrastructure/skills/memory-keeper/memory_root.py)
+— the single source of truth that orchestrators, `distill.py`, and `tools/qor_trends.py` all use —
+in this priority order:
+
+1. an explicit `--memory-root PATH` / `--memory-dir PATH` argument (scripts)
+2. the `$CHIP_DESIGN_MEMORY_ROOT` environment variable
+3. the central default `${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`
+   (Windows: `%LOCALAPPDATA%\chip-design-agents\analog\memory`)
+4. this in-repo `memory/` tree as a seed fallback (only if the central root is unwritable)
+
+On first resolution the central root is created and each `<domain>/knowledge.md` here is copied
+in **if absent** (accumulated data is never overwritten; runtime `experiences.jsonl`/`run_state.md`
+are never seeded). The analog and digital flavors use separate subdirs (`.../analog/` vs
+`.../digital/`) so same-named domains never collide.
+
+```bash
+# Where does my data actually live?
+python3 plugins/infrastructure/skills/memory-keeper/memory_root.py
+# Seed the central root + migrate any repo-local runtime data, then report:
+python3 plugins/infrastructure/skills/memory-keeper/memory_root.py --init
+```
+
+**Per-project scoping (opt-out of the central store):** `export CHIP_DESIGN_MEMORY_ROOT="$PWD/memory"`
+or pass `--memory-root ./memory` to the scripts. Throughout this document, `<MEM>` denotes the
+resolved root; orchestrators use the resolved absolute path, not the literal `memory/` directory.
 
 ## Two-Tier Design
 
@@ -84,6 +115,6 @@ file → rename to `design_state.json`. Apply the same care to `experiences.json
 
 ## How Orchestrators Use This
 
-- **Session start**: read `memory/<domain>/knowledge.md` and `run_state.md` before stage 1.
-- **Before stage 1**: write `memory/<domain>/run_state.md` with `run_id`, `design_name`, `pdk`, `tool`, `start_time`, `last_stage`.
+- **Session start**: read `<MEM>/<domain>/knowledge.md` and `run_state.md` before stage 1.
+- **Before stage 1**: write `<MEM>/<domain>/run_state.md` with `run_id`, `design_name`, `pdk`, `tool`, `start_time`, `last_stage`.
 - **Per stage**: upsert one JSON line in `experiences.jsonl` keyed by `run_id` (`signoff_achieved: false` until the final stage). Overwrite, do not append a second line for the same run.

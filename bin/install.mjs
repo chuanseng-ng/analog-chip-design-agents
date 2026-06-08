@@ -34,6 +34,7 @@ import { join, dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { spawnSync } from "node:child_process";
 import { detectAgents } from "./detect.mjs";
 
 const MARKETPLACE = "analog-chip-design-agents";
@@ -124,6 +125,29 @@ function ensureDurablePayload() {
   }
   _payloadRoot = root;
   return root;
+}
+
+// ── Seed the central memory root (best-effort; no hard Python dependency) ──────
+// Delegates to memory_root.py so the resolution + seed logic stays single-source:
+// it copies each <domain>/knowledge.md seed into the central root if absent and
+// migrates any repo-local runtime data. Skips with a hint when python is absent.
+function seedMemory() {
+  const resolver = join(
+    PACKAGE_ROOT, "plugins", "infrastructure", "skills", "memory-keeper", "memory_root.py"
+  );
+  if (!existsSync(resolver)) return;
+  console.log("\nSeeding central memory root...");
+  for (const py of ["python3", "python"]) {
+    const r = spawnSync(py, [resolver, "--init"], { encoding: "utf8" });
+    if (r.error) continue; // interpreter not found — try the next candidate
+    if (r.stdout) process.stdout.write(r.stdout);
+    if (r.status !== 0 && r.stderr) process.stderr.write(r.stderr);
+    return;
+  }
+  console.log(
+    "  [skip] python not found — seed the memory root once with:\n" +
+      `         python3 ${resolver} --init`
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -482,6 +506,7 @@ async function main() {
     if (!valid.includes(ide)) fail(`--ide must be one of: ${valid.join(", ")}`);
     const ids = ide === "all" ? SUPPORTED : [ide];
     for (const id of ids) runInstall(id, { global, claudeRequired: true });
+    seedMemory();
     console.log("\nDone.");
     return;
   }
@@ -520,6 +545,7 @@ async function main() {
   }
 
   for (const id of selected) runInstall(id, { global, claudeRequired: false });
+  seedMemory();
   console.log("\nDone.");
 }
 

@@ -79,17 +79,27 @@ Each child stage returns:
 4. Derive `retry_strategy` from `failure_class` via the skill's mapping; `failure_class: none` ⇒ `none`.
 5. Increment `cross_domain_iteration_count` once per circuit↔revalidation cycle; escalate as soon as it reaches the cap (`>=`).
 6. Always pass the `fix_request.id` in the subagent prompt so the child finds its work item.
-7. On successful signoff, move resolved `fix_requests[]` to `archive_fix_requests[]`, clear `pipeline_session_id` (set null), and write the run record to `memory/meta/experiences.jsonl`.
+7. On successful signoff, move resolved `fix_requests[]` to `archive_fix_requests[]`, clear `pipeline_session_id` (set null), and write the run record to `<MEM>/meta/experiences.jsonl`.
 8. Per-stage trace: after each stage, append one `history[]` entry to `design_state.json` (see Design State).
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Read `memory/meta/knowledge.md` (known loop patterns and escalation triggers) and
-`memory/meta/run_state.md` (resume an interrupted session) if present.
+Read `<MEM>/meta/knowledge.md` (known loop patterns and escalation triggers) and
+`<MEM>/meta/run_state.md` (resume an interrupted session) if present.
 
 ### Write (session end)
-Upsert one JSON record (create-or-replace by `run_id`) in `memory/meta/experiences.jsonl`:
+Upsert one JSON record (create-or-replace by `run_id`) in `<MEM>/meta/experiences.jsonl`:
 ```json
 {
   "run_id": "meta_<YYYYMMDD>_<HHMMSS>",
@@ -120,7 +130,7 @@ fix_requests. Create the file and parent directories if they do not exist.
 `design_state.json` in the working directory is the shared cross-orchestrator state file.
 
 ### Read (session start)
-After `memory/meta/knowledge.md`, read `design_state.json`. Extract `fix_requests`,
+After `<MEM>/meta/knowledge.md`, read `design_state.json`. Extract `fix_requests`,
 `cross_domain_iteration_count`, `pipeline_config`, `approved_checkpoints`,
 `pending_approval`, and per-domain signoff flags. Treat missing keys as `[]`/`0`/`null`.
 

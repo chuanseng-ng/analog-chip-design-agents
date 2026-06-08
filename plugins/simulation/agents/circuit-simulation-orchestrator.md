@@ -85,16 +85,26 @@ dispatches circuit-design.
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Read `memory/sim/knowledge.md` (convergence fixes, solver options, corner pitfalls) and
-`memory/sim/run_state.md` (resume) before `testbench_setup`.
+Read `<MEM>/sim/knowledge.md` (convergence fixes, solver options, corner pitfalls) and
+`<MEM>/sim/run_state.md` (resume) before `testbench_setup`.
 
 ### Write: run state (first action)
-Write `memory/sim/run_state.md` with `run_id` (`sim_<YYYYMMDD>_<HHMMSS>`), `design_name`,
+Write `<MEM>/sim/run_state.md` with `run_id` (`sim_<YYYYMMDD>_<HHMMSS>`), `design_name`,
 `pdk`, `tool`, `start_time`, `last_stage`. Update `last_stage` after each stage.
 
 ### Write: per-stage
-Upsert one JSON line in `memory/sim/experiences.jsonl` keyed by `run_id`:
+Upsert one JSON line in `<MEM>/sim/experiences.jsonl` keyed by `run_id`:
 ```json
 {
   "run_id": "<from state>",
@@ -124,7 +134,7 @@ Set `signoff_achieved: true` only when sim_signoff passes. Overwrite the line fo
 ## Design State
 
 ### Read (session start)
-After `memory/sim/knowledge.md`, read `design_state.json`. Extract `constraints`, `circuit`
+After `<MEM>/sim/knowledge.md`, read `design_state.json`. Extract `constraints`, `circuit`
 (netlist from circuit-design), `pipeline_config`, and (in re-validation mode) the target
 `fix_requests[]` entry. Treat missing keys as null.
 

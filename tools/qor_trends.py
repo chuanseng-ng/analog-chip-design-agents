@@ -32,6 +32,24 @@ import os
 import sys
 from collections import defaultdict
 
+
+def resolve_memory_dir(explicit=None):
+    """Resolve the per-domain memory store via the shared single-source-of-truth
+    resolver (plugins/infrastructure/skills/memory-keeper/memory_root.py), so this
+    reader agrees with the orchestrator writers: explicit > $CHIP_DESIGN_MEMORY_ROOT
+    > central XDG default > in-repo seed. Falls back to the literal "memory" dir if
+    the resolver module cannot be located."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    resolver = os.path.normpath(os.path.join(
+        here, "..", "plugins", "infrastructure", "skills", "memory-keeper", "memory_root.py"))
+    if os.path.isfile(resolver):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("memory_root", resolver)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return str(mod.resolve_memory_root(explicit))
+    return explicit or "memory"
+
 # Direction of "better" for known metrics. Metrics not listed are still trended,
 # but no regression alert is raised for them (direction unknown).
 HIGHER_IS_BETTER = {
@@ -219,8 +237,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--design", help="Filter to this design_name")
-    parser.add_argument("--memory-dir", default="memory",
-                        help="Root of the per-domain memory store (default: memory)")
+    parser.add_argument("--memory-dir", default=None,
+                        help="Root of the per-domain memory store "
+                             "(default: resolved central root, then in-repo seed)")
     parser.add_argument("--domain", help="Restrict to a single domain's experiences.jsonl")
     parser.add_argument("--metric", action="append", dest="metrics",
                         help="Restrict to this metric (repeatable)")
@@ -232,6 +251,9 @@ def main(argv=None):
     parser.add_argument("--list-designs", action="store_true",
                         help="List design names found and exit")
     args = parser.parse_args(argv)
+
+    if args.memory_dir is None:
+        args.memory_dir = resolve_memory_dir()
 
     if not os.path.isdir(args.memory_dir):
         print(f"ERROR: memory dir not found: {args.memory_dir}", file=sys.stderr)

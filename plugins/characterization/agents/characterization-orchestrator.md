@@ -93,18 +93,28 @@ corner/arc/error, and halt so the user can decide (e.g. route the macro back to 
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Read `memory/characterization/knowledge.md` (.lib generation patterns, sweep/corner recipes,
-monotonicity fixes, PDK/tool quirks) and `memory/characterization/run_state.md` (resume) before
+Read `<MEM>/characterization/knowledge.md` (.lib generation patterns, sweep/corner recipes,
+monotonicity fixes, PDK/tool quirks) and `<MEM>/characterization/run_state.md` (resume) before
 `char_setup`.
 
 ### Write: run state (first action)
-Write `memory/characterization/run_state.md` with `run_id`
+Write `<MEM>/characterization/run_state.md` with `run_id`
 (`characterization_<YYYYMMDD>_<HHMMSS>`), `design_name`, `pdk`, `tool`, `start_time`, `last_stage`.
 Update `last_stage` after each stage.
 
 ### Write: per-stage
-Upsert one JSON line in `memory/characterization/experiences.jsonl` keyed by `run_id`:
+Upsert one JSON line in `<MEM>/characterization/experiences.jsonl` keyed by `run_id`:
 ```json
 {
   "run_id": "<from state>",
@@ -132,7 +142,7 @@ Set `signoff_achieved: true` only when char_signoff passes. Overwrite the line f
 ## Design State
 
 ### Read (session start)
-After `memory/characterization/knowledge.md`, read `design_state.json`. Extract `constraints`
+After `<MEM>/characterization/knowledge.md`, read `design_state.json`. Extract `constraints`
 (corners, pdk, specs), `pex`/`circuit` (netlist to characterize), `pipeline_config`, and (in
 re-validation mode) the target `fix_requests[]` entry. Treat missing keys as null.
 

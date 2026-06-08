@@ -91,17 +91,27 @@ pipeline-orchestrator dispatches custom-layout.
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Read `memory/physical-verification/knowledge.md` (DRC waiver patterns, LVS debug recipes,
-antenna fixes, PDK deck quirks) and `memory/physical-verification/run_state.md` (resume) before `drc`.
+Read `<MEM>/physical-verification/knowledge.md` (DRC waiver patterns, LVS debug recipes,
+antenna fixes, PDK deck quirks) and `<MEM>/physical-verification/run_state.md` (resume) before `drc`.
 
 ### Write: run state (first action)
-Write `memory/physical-verification/run_state.md` with `run_id`
+Write `<MEM>/physical-verification/run_state.md` with `run_id`
 (`physical-verification_<YYYYMMDD>_<HHMMSS>`), `design_name`, `pdk`, `tool`, `start_time`,
 `last_stage`. Update `last_stage` after each stage.
 
 ### Write: per-stage
-Upsert one JSON line in `memory/physical-verification/experiences.jsonl` keyed by `run_id`:
+Upsert one JSON line in `<MEM>/physical-verification/experiences.jsonl` keyed by `run_id`:
 ```json
 {
   "run_id": "<from state>",
@@ -129,7 +139,7 @@ Set `signoff_achieved: true` only when pv_signoff passes. Overwrite the line for
 ## Design State
 
 ### Read (session start)
-After `memory/physical-verification/knowledge.md`, read `design_state.json`. Extract
+After `<MEM>/physical-verification/knowledge.md`, read `design_state.json`. Extract
 `constraints`, `layout` (gds to verify), `circuit` (LVS reference netlist), `pipeline_config`,
 and (in re-validation mode) the target `fix_requests[]` entry. Treat missing keys as null.
 

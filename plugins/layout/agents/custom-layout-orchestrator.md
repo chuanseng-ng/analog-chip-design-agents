@@ -79,16 +79,26 @@ with `route_to: custom-layout`):
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Before `layout_floorplan`, read `memory/layout/knowledge.md` (matching recipes, density/antenna
-fixes, PDK layer quirks) and `memory/layout/run_state.md` (resume) if present.
+Before `layout_floorplan`, read `<MEM>/layout/knowledge.md` (matching recipes, density/antenna
+fixes, PDK layer quirks) and `<MEM>/layout/run_state.md` (resume) if present.
 
 ### Write: run state (first action)
-Write `memory/layout/run_state.md` with `run_id` (`layout_<YYYYMMDD>_<HHMMSS>`), `design_name`,
+Write `<MEM>/layout/run_state.md` with `run_id` (`layout_<YYYYMMDD>_<HHMMSS>`), `design_name`,
 `pdk`, `tool`, `start_time`, `last_stage`. Update `last_stage` after each stage.
 
 ### Write: per-stage
-Upsert one JSON line in `memory/layout/experiences.jsonl` keyed by `run_id`:
+Upsert one JSON line in `<MEM>/layout/experiences.jsonl` keyed by `run_id`:
 ```json
 {
   "run_id": "<from state>",
@@ -118,7 +128,7 @@ same `run_id`. Create the file and parent directories if they do not exist.
 `design_state.json` in the working directory is the shared cross-orchestrator state file.
 
 ### Read (session start)
-After `memory/layout/knowledge.md`, read `design_state.json` if it exists. Extract
+After `<MEM>/layout/knowledge.md`, read `design_state.json` if it exists. Extract
 `constraints`, `circuit` (netlist/schematic to lay out), `architecture` (block hierarchy),
 `pipeline_config`, and (in fix-request mode) the target `fix_requests[]` entry. Treat missing
 keys as null.

@@ -286,6 +286,13 @@ with open(settings_path, "w") as f:
 print(f"  [OK] {len(plugins)} plugins enabled in settings.json")
 PYEOF
 
+  # Seed the central memory root from the in-repo memory/ seed (idempotent;
+  # copies knowledge.md only if absent, migrates any repo-local runtime data).
+  echo ""
+  echo "Seeding central memory root..."
+  python3 "$REPO_DIR/plugins/infrastructure/skills/memory-keeper/memory_root.py" --init || \
+    echo "  [skip] could not seed memory root; run memory_root.py --init manually."
+
   echo ""
   echo "Done! Restart Claude Code to activate all 16 plugins."
 

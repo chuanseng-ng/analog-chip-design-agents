@@ -91,16 +91,26 @@ so the pipeline-orchestrator dispatches the right servicer.
 
 ## Memory
 
+**Memory root (`<MEM>`).** Resolve the memory root once at session start, in priority
+order: (1) an explicit `--memory-root`, (2) the `$CHIP_DESIGN_MEMORY_ROOT` environment
+variable, (3) the central default
+`${XDG_DATA_HOME:-$HOME/.local/share}/chip-design-agents/analog/memory`, (4) the in-repo
+`memory/` seed as a last resort. Use the resolved absolute path as `<MEM>` for every memory
+read/write below — never the literal `memory/` directory. To print it, run the resolver:
+`python3 plugins/infrastructure/skills/memory-keeper/memory_root.py`. See the memory-keeper
+skill's "Memory Root Resolution" section.
+
+
 ### Read (session start)
-Read `memory/post-layout/knowledge.md` (parasitic-degradation patterns, stability/CMRR loss
-recipes, corner re-sim pitfalls) and `memory/post-layout/run_state.md` (resume) before `pex_netlist_assembly`.
+Read `<MEM>/post-layout/knowledge.md` (parasitic-degradation patterns, stability/CMRR loss
+recipes, corner re-sim pitfalls) and `<MEM>/post-layout/run_state.md` (resume) before `pex_netlist_assembly`.
 
 ### Write: run state (first action)
-Write `memory/post-layout/run_state.md` with `run_id` (`post-layout_<YYYYMMDD>_<HHMMSS>`),
+Write `<MEM>/post-layout/run_state.md` with `run_id` (`post-layout_<YYYYMMDD>_<HHMMSS>`),
 `design_name`, `pdk`, `tool`, `start_time`, `last_stage`. Update `last_stage` after each stage.
 
 ### Write: per-stage
-Upsert one JSON line in `memory/post-layout/experiences.jsonl` keyed by `run_id`:
+Upsert one JSON line in `<MEM>/post-layout/experiences.jsonl` keyed by `run_id`:
 ```json
 {
   "run_id": "<from state>",
@@ -128,7 +138,7 @@ Set `signoff_achieved: true` only when tapeout_signoff passes. Overwrite the lin
 ## Design State
 
 ### Read (session start)
-After `memory/post-layout/knowledge.md`, read `design_state.json`. Extract `constraints`, `pex`
+After `<MEM>/post-layout/knowledge.md`, read `design_state.json`. Extract `constraints`, `pex`
 (extracted netlist), `circuit`/`sim` (pre-layout reference), `pipeline_config`,
 `approved_checkpoints`, and (in re-validation mode) the target `fix_requests[]` entry. Treat
 missing keys as null.

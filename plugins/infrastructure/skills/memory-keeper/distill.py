@@ -23,6 +23,11 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+# Resolve the memory root via the shared single-source-of-truth resolver that
+# lives alongside this script, so writers and readers agree on the location.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from memory_root import resolve_memory_root  # noqa: E402
+
 # Memory domain folder names — the 14 design domains + infrastructure + meta.
 VALID_DOMAINS = [
     "architecture",
@@ -153,11 +158,9 @@ def main() -> None:
                         help="Path to the memory/ directory (default: auto-detect)")
     args = parser.parse_args()
 
-    if args.memory_root:
-        memory_root = Path(args.memory_root)
-    else:
-        # plugins/infrastructure/skills/memory-keeper/ → repo root is parents[4]
-        memory_root = Path(__file__).resolve().parents[4] / "memory"
+    # Resolve memory root: --memory-root > $CHIP_DESIGN_MEMORY_ROOT > central
+    # XDG default > in-repo seed (see memory_root.resolve_memory_root).
+    memory_root = resolve_memory_root(args.memory_root)
 
     jsonl_path = memory_root / args.domain / "experiences.jsonl"
     records = load_records(jsonl_path)
